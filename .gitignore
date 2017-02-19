@@ -1,3 +1,4 @@
 .idea
-sources/*
-compiled/*
+composer/__pycache__/
+composer/config/__pycache__/
+composer/interface/__pycache__/
