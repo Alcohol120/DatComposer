@@ -1,0 +1,12 @@
+[
+  {
+    "name": "GU",
+    "paths": {
+      "structs": "structs/GU",
+      "txt": "sources/GU",
+      "srv_dat": "compiled/GU/server",
+      "cli_dat": "compiled/GU/client/dat",
+      "cli_edf": "compiled/GU/client/edf"
+    }
+  }
+]
