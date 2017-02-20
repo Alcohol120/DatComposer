@@ -1,5 +1,6 @@
 from application.config import *
 from application.interface.gui import GUI
+from application.composer.collection import Collection
 import os
 import re
 import sys
@@ -9,7 +10,7 @@ import json
 class Core:
 
     app = object
-    collections = list
+    collections = []
 
     def init_app(self):
 
@@ -21,7 +22,9 @@ class Core:
             ui.alert_error("Can't load collections config file!<br>{}/config/collections.json!".format(ROOT_PATH))
             self.quit()
 
-
+        for collection in collections:
+            self.collections.append(Collection(collection))
+            ui.add_workspace(collection)
 
         sys.exit(self.app.exec())
 

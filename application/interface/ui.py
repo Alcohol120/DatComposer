@@ -8,6 +8,12 @@ class UI:
     tabs = object
     tabs_items = {}
 
+    composer_box = {}
+    structs = {}
+    controls = {}
+    browser = {}
+    encoder = {}
+
     pass
 
 ui = UI()
