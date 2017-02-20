@@ -1,5 +1,5 @@
-from composer.config import *
-from composer.interface.gui import GUI
+from application.config import *
+from application.interface.gui import GUI
 import os
 import re
 import sys
@@ -16,15 +16,37 @@ class Core:
         ui = GUI()
         self.app = ui.setup(sys.argv)
 
-        self.reload_collections()
+        collections = self.load_collections()
+        if not collections:
+            ui.alert_error("Can't load collections config file!<br>{}/config/collections.json!".format(ROOT_PATH))
+            self.quit()
+
+
 
         sys.exit(self.app.exec())
 
         pass
 
-    def reload_collections(self):
+    def load_collections(self):
 
-        # read collections file
+        collections = self._load_collections_config()
+
+        if self._validate_collections_config(collections):
+            return collections
+        else:
+            return False
+
+        pass
+
+    @staticmethod
+    def quit():
+
+        sys.exit()
+
+        pass
+
+    def _load_collections_config(self):
+
         try:
             file = open(ROOT_PATH + "/config/collections.json", "r")
             collections = file.read()
@@ -37,7 +59,12 @@ class Core:
         except ValueError:
             return False
 
-        # validate collections file
+        return collections
+
+        pass
+
+    def _validate_collections_config(self, collections):
+
         if type(collections) is not list:
             return False
         for collection in collections:
@@ -60,7 +87,6 @@ class Core:
             if "cli_edf" not in path_cfg or re.search(DIR_NAME_RE, path_cfg["cli_edf"]) is None:
                 return False
 
-        self.collections = collections
         return True
 
         pass

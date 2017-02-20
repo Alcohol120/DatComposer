@@ -1,4 +1,4 @@
 .idea
-composer/__pycache__/
-composer/config/__pycache__/
-composer/interface/__pycache__/
+application/__pycache__/
+application/config/__pycache__/
+application/interface/__pycache__/

@@ -1,5 +1,5 @@
-from composer.config import *
-from composer.interface.ui import ui
+from application.config import *
+from application.interface.ui import ui
 from PyQt5 import QtCore
 from PyQt5 import QtGui
 from PyQt5.QtWidgets import *
@@ -11,11 +11,11 @@ class Builder:
 
         # application icon
         app_icon = QtGui.QIcon()
-        app_icon.addFile(ROOT_PATH + '/composer/assets/icon.png', QtCore.QSize(16, 16))
-        app_icon.addFile(ROOT_PATH + '/composer/assets/icon.png', QtCore.QSize(24, 24))
-        app_icon.addFile(ROOT_PATH + '/composer/assets/icon.png', QtCore.QSize(32, 32))
-        app_icon.addFile(ROOT_PATH + '/composer/assets/icon.png', QtCore.QSize(48, 48))
-        app_icon.addFile(ROOT_PATH + '/composer/assets/icon.png', QtCore.QSize(256, 256))
+        app_icon.addFile(ROOT_PATH + '/application/assets/icon.png', QtCore.QSize(16, 16))
+        app_icon.addFile(ROOT_PATH + '/application/assets/icon.png', QtCore.QSize(24, 24))
+        app_icon.addFile(ROOT_PATH + '/application/assets/icon.png', QtCore.QSize(32, 32))
+        app_icon.addFile(ROOT_PATH + '/application/assets/icon.png', QtCore.QSize(48, 48))
+        app_icon.addFile(ROOT_PATH + '/application/assets/icon.png', QtCore.QSize(256, 256))
 
         # setting main window
         ui.window = QMainWindow()

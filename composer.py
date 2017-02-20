@@ -1,4 +1,4 @@
-from composer.core import core
+from application.core import core
 
 if __name__ == "__main__":
     print(__name__)
