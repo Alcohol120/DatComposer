@@ -1,0 +1,66 @@
+{
+  "structure_info": {
+    "version": "1.0",
+    "author": "Alcohol120%"
+  },
+  "working_path": "ItemLooting",
+  "dat_structures": {
+    "ItemLooting_DAT": [
+      { "title": "m_dwIndex", "type": "u32" },
+      { "title": "m_strCode", "type": "cstr" },
+      { "title": "m_nLootRate", "type": "i32" },
+      { "title": "m_nLootTime", "type": "i32" },
+      { "title": "m_nOperationCount", "type": "i32" },
+      { "title": "m_nLootListCount", "type": "i32" },
+      {
+        "repeat": 200,
+        "block": [
+          { "title": "$i. m_itmLootCodeKey", "type": "cstr", "len": 8 }
+        ]
+      }
+    ]
+  },
+  "txt_structures": {
+    "ItemLooting_TXT": [
+      { "title": "m_strCode", "from": "ItemLooting", "field": "m_strCode" },
+      { "title": "m_nLootRate", "from": "ItemLooting", "field": "m_nLootRate" },
+      { "title": "m_nLootTime", "from": "ItemLooting", "field": "m_nLootTime" },
+      { "title": "m_nOperationCount", "from": "ItemLooting", "field": "m_nOperationCount" },
+      { "title": "m_nLootListCount", "from": "ItemLooting", "field": "m_nLootListCount" },
+      {
+        "repeat": 200,
+        "block": [
+          { "title": "$i. m_itmLootCodeKey", "from": "ItemLooting", "field": "$i. m_itmLootCodeKey" }
+        ]
+      }
+    ]
+  },
+  "dat_files": [
+    {
+      "side": "server",
+      "source_file": "Script/ItemLooting.dat",
+      "header_file": "ItemLooting.json",
+      "groups": [
+        {
+          "group_name": "ItemLooting",
+          "header": [
+            { "title": "rows", "type": "u32" },
+            { "title": "columns", "type": "u32" },
+            { "title": "block_size", "type": "u32" }
+          ],
+          "count": "{rows}",
+          "count_override": "rows",
+          "index_override": "m_dwIndex",
+          "structure": "ItemLooting_DAT"
+        }
+      ]
+    }
+  ],
+  "txt_files": [
+    {
+      "output_file": "ItemLooting.txt",
+      "groups": "ItemLooting",
+      "structure": "ItemLooting_TXT"
+    }
+  ]
+}

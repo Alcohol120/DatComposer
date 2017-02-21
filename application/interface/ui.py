@@ -1,5 +1,6 @@
 class UI:
 
+    app = object
     window = object
 
     menu_bar = object

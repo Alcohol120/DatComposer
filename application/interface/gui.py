@@ -11,43 +11,42 @@ class GUI:
 
     def setup(self, sys_argv):
 
-        app = QApplication(sys_argv)
+        ui.app = QApplication(sys_argv)
 
         builder.build()
 
         # show the main window
         ui.window.show()
 
-        return app
+        return ui.app
 
         pass
 
-    def add_workspace(self, collection):
+    def setup_workspace(self, collection):
 
         builder.add_tab(collection["name"])
         builder.create_structures_box(collection["name"])
         builder.create_main_controls(collection["name"])
         builder.create_info_browser(collection["name"])
         builder.create_encoder_block(collection["name"])
-        qn_buttons = builder.create_quick_nav(collection["name"])
+        quick_nav = builder.create_quick_nav(collection["name"])
 
         # register quick nav events
-        i = 0
-        for btn in qn_buttons:
-            if i == 0:
-                path = ROOT_PATH + "/" + collection["paths"]["cli_dat"]
-            elif i == 1:
-                path = ROOT_PATH + "/" + collection["paths"]["cli_edf"]
-            elif i == 2:
-                path = ROOT_PATH + "/" + collection["paths"]["srv_dat"]
-            elif i == 3:
-                path = ROOT_PATH + "/" + collection["paths"]["txt"]
-            elif i == 4:
-                path = ROOT_PATH + "/" + collection["paths"]["structs"]
-            elif i == 5:
-                path = ROOT_PATH
-            btn.clicked.connect(lambda: os.startfile(path))
-            i += 1
+        quick_nav[0].clicked.connect(lambda: self.open_catalog(ROOT_PATH + "/" + collection["paths"]["cli_dat"]))
+        quick_nav[1].clicked.connect(lambda: self.open_catalog(ROOT_PATH + "/" + collection["paths"]["cli_edf"]))
+        quick_nav[2].clicked.connect(lambda: self.open_catalog(ROOT_PATH + "/" + collection["paths"]["srv_dat"]))
+        quick_nav[3].clicked.connect(lambda: self.open_catalog(ROOT_PATH + "/" + collection["paths"]["txt"]))
+        quick_nav[4].clicked.connect(lambda: self.open_catalog(ROOT_PATH + "/" + collection["paths"]["structs"]))
+        quick_nav[5].clicked.connect(lambda: self.open_catalog(ROOT_PATH))
+
+        pass
+
+    def open_catalog(self, path):
+
+        if os.path.isdir(path):
+            os.startfile(path)
+        else:
+            self.alert_error("Can't find catalog!<br>" + path)
 
         pass
 

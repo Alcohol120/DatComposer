@@ -1,5 +1,6 @@
 from application.config import *
 from application.interface.gui import GUI
+from application.interface.events import Events
 from application.composer.collection import Collection
 import os
 import re
@@ -9,24 +10,31 @@ import json
 
 class Core:
 
-    app = object
     collections = []
+    active = ""
 
     def init_app(self):
 
         ui = GUI()
-        self.app = ui.setup(sys.argv)
+        app = ui.setup(sys.argv)
 
+        # load collections config file
         collections = self.load_collections()
         if not collections:
             ui.alert_error("Can't load collections config file!<br>{}/config/collections.json!".format(ROOT_PATH))
             self.quit()
 
+        # setup workspace for each collection
+        # initialize collections objects
         for collection in collections:
+            if self.active == "":
+                # set first collection to active workspace
+                self.active = collection["name"]
             self.collections.append(Collection(collection))
-            ui.add_workspace(collection)
+            ui.setup_workspace(collection)
+            Events(collection["name"])
 
-        sys.exit(self.app.exec())
+        sys.exit(app.exec())
 
         pass
 
