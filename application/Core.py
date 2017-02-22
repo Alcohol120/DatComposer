@@ -1,33 +1,43 @@
 from application.config import *
-from application.interface.gui import GUI
-from application.interface.events import Events
-from application.controller import Controller
-from application.composer.collection import Collection
-import os
+from application.interface.Layout import Layout
+from application.composer.Collection import Collection
 import re
 import sys
 import json
+import ctypes
+import platform
 
 
 class Core:
 
-    def init_app(self):
+    def __init__(self):
 
-        ui = GUI()
-        app = ui.setup(sys.argv)
+        self.layout = Layout()
+        self.collections = []
+
+        # set Windows AppID
+        if platform.system() == "Windows":
+            app_id = "AlcLab." + APP_NAME + "." + APP_NAME + "." + APP_VERSION
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(app_id)
+
+        pass
+
+    def run(self):
+
+        self._init_app()
 
         # load collections config file
         collections = self.load_collections()
         if not collections:
-            ui.alert_error("Can't load collections config file!<br>{}/config/collections.json!".format(ROOT_PATH))
+            message = "Can't load collections config file!<br>{}/config/collections.json!".format(ROOT_PATH)
+            self.layout.alert_error(message)
             sys.exit()
 
-        # setup workspace for each collection
-        # initialize collections objects
+        # setup collections
         for collection in collections:
-            ui.setup_workspace(collection)
-            self._setup_collection(collection)
+            self.setup_collection(collection)
 
+        app = self.layout.get_app_instance()
         sys.exit(app.exec())
 
         pass
@@ -43,7 +53,23 @@ class Core:
 
         pass
 
-    def _load_collections_config(self):
+    def setup_collection(self, collection):
+
+        self.collections.append(Collection(collection))
+
+        pass
+
+    # Private Methods
+
+    def _init_app(self):
+
+        self.layout = Layout()
+        self.layout.setup(sys.argv)
+
+        pass
+
+    @staticmethod
+    def _load_collections_config():
 
         try:
             file = open(ROOT_PATH + "/config/collections.json", "r")
@@ -61,7 +87,8 @@ class Core:
 
         pass
 
-    def _validate_collections_config(self, collections):
+    @staticmethod
+    def _validate_collections_config(collections):
 
         if type(collections) is not list:
             return False
@@ -86,15 +113,6 @@ class Core:
                 return False
 
         return True
-
-        pass
-
-    def _setup_collection(self, collection):
-
-        # init controller for collection
-        controller = Controller(collection)
-        # init UI events for controller
-        Events(collection["name"], controller)
 
         pass
 

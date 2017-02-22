@@ -8,5 +8,15 @@
       "cli_dat": "compiled/GU/client/dat",
       "cli_edf": "compiled/GU/client/edf"
     }
+  },
+  {
+    "name": "BSB",
+    "paths": {
+      "structs": "structs/BSB",
+      "txt": "sources/BSB",
+      "srv_dat": "compiled/BSB/server",
+      "cli_dat": "compiled/BSB/client/dat",
+      "cli_edf": "compiled/BSB/client/edf"
+    }
   }
 ]

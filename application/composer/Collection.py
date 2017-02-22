@@ -1,0 +1,129 @@
+from application.config import *
+from application.interface.Workspace import Workspace
+from application.composer.Structure import Structure
+import os
+
+
+class Collection:
+
+    def __init__(self, data):
+
+        self.name = data["name"]
+        self.paths = data["paths"]
+
+        self.ui = Workspace(data["name"])
+        self.structures = {}
+
+        self.prepare_catalogs()
+        self.ui.setup_workspace()
+
+        self._register_events()
+
+        pass
+
+    def prepare_catalogs(self):
+
+        if not self._check_catalogs():
+            self._create_catalogs()
+
+        pass
+
+    def reload_structures(self):
+
+        if not self._check_catalog("structs"):
+            return []
+
+        structs_path = ROOT_PATH + "/" + self.paths["structs"]
+
+        files = os.listdir(structs_path)
+
+        for file in files:
+            structure = Structure(file, structs_path)
+            if structure.load():
+                print("ok")
+
+        pass
+
+    # Private Methods
+
+    def _check_catalog(self, catalog):
+
+        if not os.path.isdir(ROOT_PATH + "/" + self.paths[catalog]):
+            return False
+        else:
+            return True
+
+        pass
+
+    def _check_catalogs(self):
+
+        for _, path in self.paths.items():
+            if not os.path.isdir(ROOT_PATH + "/" + path):
+                return False
+
+        return True
+
+        pass
+
+    def _create_catalogs(self):
+
+        for _, path in self.paths.items():
+            if not os.path.isdir(ROOT_PATH + "/" + path):
+                os.makedirs(ROOT_PATH + "/" + path)
+
+        pass
+
+    def _register_events(self):
+
+        self._quick_nav_events()
+        self._window_focus_event()
+
+        pass
+
+    def _quick_nav_events(self):
+
+        self.ui.quick_nav["cli_dat"].clicked.connect(lambda: (
+            self._open_catalog(ROOT_PATH + "/" + self.paths["cli_dat"])
+        ))
+        self.ui.quick_nav["cli_edf"].clicked.connect(lambda: (
+            self._open_catalog(ROOT_PATH + "/" + self.paths["cli_edf"])
+        ))
+        self.ui.quick_nav["srv_dat"].clicked.connect(lambda: (
+            self._open_catalog(ROOT_PATH + "/" + self.paths["srv_dat"])
+        ))
+        self.ui.quick_nav["txt"].clicked.connect(lambda: (
+            self._open_catalog(ROOT_PATH + "/" + self.paths["txt"])
+        ))
+        self.ui.quick_nav["strs"].clicked.connect(lambda: (
+            self._open_catalog(ROOT_PATH + "/" + self.paths["structs"])
+        ))
+        self.ui.quick_nav["root"].clicked.connect(lambda: (
+            self._open_catalog(ROOT_PATH)
+        ))
+
+        pass
+
+    def _window_focus_event(self):
+
+        app = self.ui.get_app_instance()
+        app.focusWindowChanged.connect(self._on_window_focus)
+
+        pass
+
+    def _on_window_focus(self, event):
+
+        if event is not None:
+            self.reload_structures()
+
+        pass
+
+    def _open_catalog(self, path):
+
+        if os.path.isdir(path):
+            os.startfile(path)
+        else:
+            self.ui.alert_error("Can't find catalog!<br>" + path)
+
+        pass
+
+    pass

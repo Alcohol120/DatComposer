@@ -1,4 +1,2 @@
-from .application import *
-from .paths import *
-
-
+from .Application import *
+from .Paths import *
