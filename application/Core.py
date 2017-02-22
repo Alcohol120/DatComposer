@@ -37,6 +37,9 @@ class Core:
         for collection in collections:
             self.setup_collection(collection)
 
+        # register events
+        self._register_events()
+
         app = self.layout.get_app_instance()
         sys.exit(app.exec())
 
@@ -113,6 +116,10 @@ class Core:
                 return False
 
         return True
+
+        pass
+
+    def _register_events(self):
 
         pass
 

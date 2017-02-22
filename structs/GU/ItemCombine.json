@@ -1,0 +1,312 @@
+{
+  "structure_info": {
+    "version": "1.0",
+    "author": "Alcohol120%",
+    "description": "This structure can't add rows to ItemCombine.edf!"
+  },
+  "working_path": "ItemCombine",
+  "dat_structures": {
+    "CombineTableSTRS": [
+      { "title": "m_dwIndex", "type": "u32" },
+      { "title": "m_strCode", "type": "cstr", "len": 64 },
+      { "title": "m_dwCommit", "type": "u32" },
+      { "title": "m_strCivil", "type": "cstr", "len": 64 },
+      { "title": "m_bCombineExist", "type": "i32" },
+      { "title": "m_strCombineType", "type": "cstr", "len": 64 },
+      { "title": "FailOutItem", "type": "i32" },
+      {
+        "repeat": 5,
+        "fields": [
+          { "title": "{loop}. m_itmPdMat", "type": "cstr", "len": 8 },
+          { "title": "{loop}. m_dwUpt", "type": "x32" },
+          { "title": "{loop}. m_nDur", "type": "i32" }
+        ]
+      },
+      { "title": "m_bSelectItem", "type": "i32" },
+      { "title": "m_nOperationCount", "type": "i32" },
+      {
+        "repeat": 24,
+        "fields": [
+          { "title": "{loop}. m_itmPdOutput", "type": "cstr", "len": 8 },
+          { "title": "{loop}. m_dwUpt2", "type": "x32" },
+          { "title": "{loop}. m_dwEffectType", "type": "i32" },
+          { "title": "{loop}. m_dwResultEffectMsgCode", "type": "i32" },
+          { "title": "{loop}. m_dwPdProp", "type": "i32" },
+          { "title": "{loop}. m_nOutNum", "type": "i32" }
+        ]
+      }
+    ],
+    "LinkedStuffSTRS": [
+      { "title": "m_dwIndex", "type": "u32" },
+      { "title": "m_strCode", "type": "cstr", "len": 64 },
+      {
+        "repeat": 100,
+        "fields": [
+          { "title": "{loop}. m_strLinkItemIn", "type": "cstr", "len": 64 }
+        ]
+      }
+    ],
+    "LinkedResultSTRS": [
+      { "title": "m_dwIndex", "type": "u32" },
+      { "title": "m_strCode", "type": "cstr", "len": 64 },
+      {
+        "repeat": 100,
+        "fields": [
+          { "title": "{loop}. m_strLinkItemOut", "type": "cstr", "len": 64 }
+        ]
+      }
+    ],
+    "ItemCombineSTRS": [
+      { "title": "Index", "type": "u32" },
+      { "title": "Enabled", "type": "i32", "use": "m_bCombineExist" },
+      { "title": "Amount", "type": "i32", "use": "m_dwCommit" },
+      { "title": "BM", "type": "u8", "use": "m_strCivil", "rule": "race_bm" },
+      { "title": "BF", "type": "u8", "use": "m_strCivil", "rule": "race_bf" },
+      { "title": "CM", "type": "u8", "use": "m_strCivil", "rule": "race_cm" },
+      { "title": "CF", "type": "u8", "use": "m_strCivil", "rule": "race_cf" },
+      { "title": "A", "type": "u32", "use": "m_strCivil", "rule": "race_a" },
+      {
+        "repeat": 5,
+        "fields": [
+          { "title": "{loop}. Item Type", "type": "i32", "use": "{loop}. m_itmPdMat", "rule": "item_code" },
+          { "title": "{loop}. LinkedIndex", "type": "i32" },
+          { "title": "{loop}. Item ID", "type": "x32", "use": "{loop}. m_itmPdMat", "rule": "item_id" },
+          { "title": "{loop}. Amount", "type": "i32", "use": "{loop}. m_nDur" },
+          { "title": "{loop}. Modify", "type": "x32", "use": "{loop}. m_dwUpt" }
+        ]
+      },
+      { "title": "TotalItems", "type": "u32" }
+    ],
+    "CLI_LinkedStuffSTRS": [
+      { "title": "nCount", "type": "i32" },
+      { "title": "TotalItems", "type": "i32" },
+      {
+        "repeat": 100,
+        "fields": [
+          { "title": "{loop}. Item Type", "type": "i32", "use": "{loop}. m_strLinkItemIn", "rule": "item_code" },
+          { "title": "{loop}. ?", "type": "i32" },
+          { "title": "{loop}. Item ID", "type": "x32", "use": "{loop}. m_strLinkItemIn", "rule": "item_id" }
+        ]
+      }
+    ]
+  },
+  "txt_structures": {
+    "CombineTableTXT": [
+      { "title": "m_strCode", "from": "CombineTable", "field": "m_strCode" },
+      { "title": "m_dwCommit", "from": "CombineTable", "field": "m_dwCommit" },
+      { "title": "m_strCivil", "from": "CombineTable", "field": "m_strCivil" },
+      { "title": "m_bCombineExist", "from": "CombineTable", "field": "m_bCombineExist" },
+      { "title": "m_strCombineType", "from": "CombineTable", "field": "m_strCombineType" },
+      { "title": "FailOutItem", "from": "CombineTable", "field": "FailOutItem" },
+      {
+        "repeat": 5,
+        "fields": [
+          { "title": "{loop}. m_itmPdMat", "from": "CombineTable", "field": "{loop}. m_itmPdMat" },
+          { "title": "{loop}. m_dwUpt", "from": "CombineTable", "field": "{loop}. m_dwUpt" },
+          { "title": "{loop}. m_nDur", "from": "CombineTable", "field": "{loop}. m_nDur" },
+          { "title": "{loop}. LinkedIndex", "from": "ItemCombine", "field": "{loop}. LinkedIndex" }
+        ]
+      },
+      { "title": "m_bSelectItem", "from": "CombineTable", "field": "m_bSelectItem" },
+      { "title": "m_nOperationCount", "from": "CombineTable", "field": "m_nOperationCount" },
+      {
+        "repeat": 24,
+        "fields": [
+          { "title": "{loop}. m_itmPdOutput", "from": "CombineTable", "field": "{loop}. m_itmPdOutput" },
+          { "title": "{loop}. m_dwUpt2", "from": "CombineTable", "field": "{loop}. m_dwUpt2" },
+          { "title": "{loop}. m_dwEffectType", "from": "CombineTable", "field": "{loop}. m_dwEffectType" },
+          { "title": "{loop}. m_dwResultEffectMsgCode", "from": "CombineTable", "field": "{loop}. m_dwResultEffectMsgCode" },
+          { "title": "{loop}. m_dwPdProp", "from": "CombineTable", "field": "{loop}. m_dwPdProp" },
+          { "title": "{loop}. m_nOutNum", "from": "CombineTable", "field": "{loop}. m_nOutNum" }
+        ]
+      },
+      { "title": "TotalItems", "from": "ItemCombine", "field": "TotalItems" }
+    ],
+    "CombineTable2TXT": [
+      { "title": "m_strCode", "from": "CombineTable2", "field": "m_strCode" },
+      { "title": "m_dwCommit", "from": "CombineTable2", "field": "m_dwCommit" },
+      { "title": "m_strCivil", "from": "CombineTable2", "field": "m_strCivil" },
+      { "title": "m_bCombineExist", "from": "CombineTable2", "field": "m_bCombineExist" },
+      { "title": "m_strCombineType", "from": "CombineTable2", "field": "m_strCombineType" },
+      { "title": "FailOutItem", "from": "CombineTable2", "field": "FailOutItem" },
+      {
+        "repeat": 5,
+        "fields": [
+          { "title": "{loop}. m_itmPdMat", "from": "CombineTable2", "field": "{loop}. m_itmPdMat" },
+          { "title": "{loop}. m_dwUpt", "from": "CombineTable2", "field": "{loop}. m_dwUpt" },
+          { "title": "{loop}. m_nDur", "from": "CombineTable2", "field": "{loop}. m_nDur" },
+          { "title": "{loop}. LinkedIndex", "from": "ItemCombine2", "field": "{loop}. LinkedIndex" }
+        ]
+      },
+      { "title": "m_bSelectItem", "from": "CombineTable2", "field": "m_bSelectItem" },
+      { "title": "m_nOperationCount", "from": "CombineTable2", "field": "m_nOperationCount" },
+      {
+        "repeat": 24,
+        "fields": [
+          { "title": "{loop}. m_itmPdOutput", "from": "CombineTable2", "field": "{loop}. m_itmPdOutput" },
+          { "title": "{loop}. m_dwUpt2", "from": "CombineTable2", "field": "{loop}. m_dwUpt2" },
+          { "title": "{loop}. m_dwEffectType", "from": "CombineTable2", "field": "{loop}. m_dwEffectType" },
+          { "title": "{loop}. m_dwResultEffectMsgCode", "from": "CombineTable2", "field": "{loop}. m_dwResultEffectMsgCode" },
+          { "title": "{loop}. m_dwPdProp", "from": "CombineTable2", "field": "{loop}. m_dwPdProp" },
+          { "title": "{loop}. m_nOutNum", "from": "CombineTable2", "field": "{loop}. m_nOutNum" }
+        ]
+      },
+      { "title": "TotalItems", "from": "ItemCombine2", "field": "TotalItems" }
+    ],
+    "LinkedStuffTXT": [
+      { "title": "m_strCode", "from": "LinkedStuff", "field": "m_strCode" },
+      { "title": "TotalItems", "from": "CLI_LinkedStuff", "field": "TotalItems" },
+      {
+        "repeat": 100,
+        "fields": [
+          { "title": "{loop}. m_strLinkItemIn", "from": "LinkedStuff", "field": "{loop}. m_strLinkItemIn" },
+          { "title": "{loop}. ?", "from": "CLI_LinkedStuff", "field": "{loop}. ?" }
+        ]
+      }
+    ],
+    "LinkedResultTXT": [
+      { "title": "m_strCode", "from": "LinkedResult", "field": "m_strCode" },
+      {
+        "repeat": 100,
+        "fields": [
+          { "title": "{loop}. m_strLinkItemOut", "from": "LinkedResult", "field": "{loop}. m_strLinkItemOut" }
+        ]
+      }
+    ]
+  },
+  "dat_files": [
+    {
+      "side": "server",
+      "source_file": "Script/CombineTable.dat",
+      "header_file": "CombineTable.json",
+      "groups": [
+        {
+          "group_name": "CombineTable",
+          "header": [
+            { "title": "rows", "type": "u32" },
+            { "title": "columns", "type": "u32" },
+            { "title": "block_size", "type": "u32" }
+          ],
+          "count": "{rows}",
+          "count_override": "rows",
+          "index_override": "m_dwIndex",
+          "structure": "CombineTableSTRS"
+        }
+      ]
+    },
+    {
+      "side": "server",
+      "source_file": "Script/CombineTable2.dat",
+      "header_file": "CombineTable2.json",
+      "groups": [
+        {
+          "group_name": "CombineTable2",
+          "header": [
+            { "title": "rows", "type": "u32" },
+            { "title": "columns", "type": "u32" },
+            { "title": "block_size", "type": "u32" }
+          ],
+          "count": "{rows}",
+          "count_override": "rows",
+          "index_override": "m_dwIndex",
+          "structure": "CombineTableSTRS"
+        }
+      ]
+    },
+    {
+      "side": "server",
+      "source_file": "Script/LinkedStuff.dat",
+      "header_file": "LinkedStuff.json",
+      "groups": [
+        {
+          "group_name": "LinkedStuff",
+          "header": [
+            { "title": "rows", "type": "u32" },
+            { "title": "columns", "type": "u32" },
+            { "title": "block_size", "type": "u32" }
+          ],
+          "count": "{rows}",
+          "count_override": "rows",
+          "index_override": "m_dwIndex",
+          "structure": "LinkedStuffSTRS"
+        }
+      ]
+    },
+    {
+      "side": "server",
+      "source_file": "Script/LinkedResult.dat",
+      "header_file": "LinkedResult.json",
+      "groups": [
+        {
+          "group_name": "LinkedResult",
+          "header": [
+            { "title": "rows", "type": "u32" },
+            { "title": "columns", "type": "u32" },
+            { "title": "block_size", "type": "u32" }
+          ],
+          "count": "{rows}",
+          "count_override": "rows",
+          "index_override": "m_dwIndex",
+          "structure": "LinkedResultSTRS"
+        }
+      ]
+    },
+    {
+      "side": "client",
+      "source_file": "ItemCombine.dat",
+      "header_file": "ItemCombine.json",
+      "groups": [
+        {
+          "group_name": "ItemCombine",
+          "header": [
+            { "title": "combineb", "type": "u32" },
+            { "title": "combinec", "type": "u32" }
+          ],
+          "count": 60374,
+          "index_override": "Index",
+          "structure": "ItemCombineSTRS"
+        },
+        {
+          "group_name": "ItemCombine2",
+          "header": [],
+          "count": "{combineb} - 60374",
+          "index_override": "Index",
+          "structure": "ItemCombineSTRS"
+        },
+        {
+          "group_name": "CLI_LinkedStuff",
+          "header": [
+            { "title": "linkedstuffb", "type": "u32" },
+            { "title": "linkedstuffc", "type": "u32" }
+          ],
+          "count": "{linkedstuffb}",
+          "count_override": "linkedstuffb",
+          "index_override": "nCount",
+          "structure": "CLI_LinkedStuffSTRS"
+        }
+      ]
+    }
+  ],
+  "txt_files": [
+    {
+      "output_file": "CombineTable.txt",
+      "groups": "CombineTable|ItemCombine",
+      "structure": "CombineTableTXT"
+    },
+    {
+      "output_file": "CombineTable2.txt",
+      "groups": "CombineTable2|ItemCombine2",
+      "structure": "CombineTable2TXT"
+    },
+    {
+      "output_file": "LinkedStuff.txt",
+      "groups": "LinkedStuff|CLI_LinkedStuff",
+      "structure": "LinkedStuffTXT"
+    },
+    {
+      "output_file": "LinkedResult.txt",
+      "groups": "LinkedResult",
+      "structure": "LinkedResultTXT"
+    }
+  ]
+}

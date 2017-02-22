@@ -12,7 +12,7 @@ class Collection:
         self.paths = data["paths"]
 
         self.ui = Workspace(data["name"])
-        self.structures = {}
+        self.structures = []
 
         self.prepare_catalogs()
         self.ui.setup_workspace()
@@ -30,6 +30,8 @@ class Collection:
 
     def reload_structures(self):
 
+        self.ui.clear_structs_list()
+
         if not self._check_catalog("structs"):
             return []
 
@@ -39,8 +41,22 @@ class Collection:
 
         for file in files:
             structure = Structure(file, structs_path)
+            structure.set_callback(self)
             if structure.load():
-                print("ok")
+                self.structures.append(structure)
+                self.ui.add_structure(structure.get_name())
+                structure.validate()
+            else:
+                del structure
+
+        pass
+
+    def assert_error(self, message, title=False):
+
+        if title:
+            self.ui.alert_error(message, title)
+        else:
+            self.ui.alert_error(message)
 
         pass
 

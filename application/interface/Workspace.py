@@ -33,6 +33,18 @@ class Workspace(UI):
 
         pass
 
+    def clear_structs_list(self):
+
+        self.structs.clear()
+
+        pass
+
+    def add_structure(self, structure):
+
+        self.structs.addItem(structure)
+
+        pass
+
     @staticmethod
     def get_app_instance():
 

@@ -1,12 +1,7 @@
 {
-  "structure_info": {
-    "version": "1.0",
-    "author": "Alcohol120%"
-  },
-  "working_path": "ItemLooting",
   "dat_structures": {
     "ItemLooting_DAT": [
-      { "title": "m_dwIndex", "type": "u32" },
+      { "title": "m_dwIndex", "type": "u32", "value": "{count}" },
       { "title": "m_strCode", "type": "cstr" },
       { "title": "m_nLootRate", "type": "i32" },
       { "title": "m_nLootTime", "type": "i32" },
@@ -14,8 +9,8 @@
       { "title": "m_nLootListCount", "type": "i32" },
       {
         "repeat": 200,
-        "block": [
-          { "title": "$i. m_itmLootCodeKey", "type": "cstr", "len": 8 }
+        "fields": [
+          { "title": "{loop}. m_itmLootCodeKey", "type": "cstr", "len": 8 }
         ]
       }
     ]
@@ -29,8 +24,8 @@
       { "title": "m_nLootListCount", "from": "ItemLooting", "field": "m_nLootListCount" },
       {
         "repeat": 200,
-        "block": [
-          { "title": "$i. m_itmLootCodeKey", "from": "ItemLooting", "field": "$i. m_itmLootCodeKey" }
+        "fields": [
+          { "title": "{loop}. m_itmLootCodeKey", "from": "ItemLooting", "field": "{loop}. m_itmLootCodeKey" }
         ]
       }
     ]
@@ -50,7 +45,6 @@
           ],
           "count": "{rows}",
           "count_override": "rows",
-          "index_override": "m_dwIndex",
           "structure": "ItemLooting_DAT"
         }
       ]

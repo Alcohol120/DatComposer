@@ -1,0 +1,232 @@
+{
+  "structure_info": {
+    "version": "1.0",
+    "author": "Alcohol120%",
+    "description": ""
+  },
+  "working_path": "StoreList",
+  "dat_structures": {
+    "SRV_StoreList_DAT": [
+      {"title": "m_dwIndex", "type": "u32"},
+      {"title": "m_strCode", "type": "cstr"},
+      {"title": "m_strBinding_DummyName", "type": "cstr"},
+      {"title": "m_strStore_NPCcode", "type": "cstr"},
+      {"title": "m_strStore_NPCname", "type": "cstr"},
+      {"title": "m_strStore_MAPcode", "type": "cstr"},
+      {"title": "m_nStore_trade", "type": "i32"},
+      {"title": "m_bSet_NPCangle", "type": "i32"},
+      {"title": "m_nStore_NPCangle", "type": "i32"},
+      {
+        "repeat": 10,
+        "fields": [
+          {"title": "{loop}. m_nNpc_Class", "type": "i32"}
+        ]
+      },
+      {"title": "m_nStore_LISTcount", "type": "i32"},
+      {"title": "m_nLimit_Listcount", "type": "i32"},
+      {"title": "m_nLimitItem_InitTime", "type": "i32"},
+      {"title": "m_nPriceSet", "type": "i32"},
+      {"title": "m_nItemUpCode", "type": "x32"},
+      {
+        "repeat": 200,
+        "fields": [
+          {"title": "{loop}. m_strItemlist", "type": "cstr"}
+        ]
+      },
+      {
+        "repeat": 16,
+        "fields": [
+          {"title": "{loop}. m_strItemCode", "type": "cstr"},
+          {"title": "{loop}. m_nMaxCount", "type": "i32"}
+        ]
+      }
+    ],
+    "SRV_StoreListSTR_DAT": [
+      {"title": "m_strIndex", "type": "u32"},
+      {"title": "s_strCode", "type": "cstr", "use": "m_strCode"},
+      {
+        "repeat": 11,
+        "fields": [
+          {"title": "{loop}. m_str", "type": "cstr"}
+        ]
+      }
+    ],
+    "CLI_Store_DAT": [
+      {"title": "Index", "type": "u32"},
+      {"title": "ID", "type": "x32"},
+      {"title": "Race", "type": "u8"},
+      {"title": "NPCTitle", "type": "cstr", "len": 32, "value": ""},
+      {"title": "NPCName", "type": "cstr", "len": 32, "value": ""},
+      {"title": "Texture", "type": "cstr", "len": 32, "use": "m_strStore_NPCcode"},
+      {"title": "ShopType", "type": "u8", "use": "m_nStore_trade"},
+      {"title": "?", "type": "u16", "value": "0"},
+      {"title": "NPCstoreAngle", "type": "float", "use": "m_nStore_NPCangle"},
+      {"title": "NPCsetAngle", "type": "u32", "use": "m_bSet_NPCangle"},
+      {"title": "??", "type": "float"},
+      {"title": "ItemsCount", "type": "u32", "use": "m_nStore_LISTcount"},
+      {
+        "repeat": 200,
+        "fields": [
+          {"title": "{loop}. ItemType", "type": "u32", "use": "{loop}. m_strItemlist", "rule": "item_code"},
+          {"title": "{loop}. ItemID", "type": "x32", "use": "{loop}. m_strItemlist", "rule": "item_id"}
+        ]
+      },
+      {
+        "repeat": 10,
+        "fields": [
+          {"title": "{loop}. ButtonID", "type": "u8", "use": "{loop}. m_nNpc_Class"}
+        ]
+      },
+      {"title": "Message", "type": "cstr", "len": 4, "value": ""},
+      {"title": "???", "type": "u16", "value": "0"},
+      {"title": "xPrice", "type": "u32", "use": "m_nPriceSet"},
+      {"title": "Slots", "type": "x32", "use": "m_nItemUpCode"},
+      {"title": "ItemsCount2", "type": "u32", "use": "m_nLimit_Listcount"},
+      {
+        "repeat": 16,
+        "fields": [
+          {"title": "{loop}. ItemType2", "type": "u32", "use": "{loop}. m_strItemCode", "rule": "item_code"},
+          {"title": "{loop}. ItemID2", "type": "x32", "use": "{loop}. m_strItemCode", "rule": "item_id"},
+          {"title": "{loop}. ItemsCnt", "type": "u32", "use": "{loop}. m_nMaxCount"}
+        ]
+      }
+    ],
+    "CLI_NDStore_DAT": [
+      { "title": "Index", "type": "u32" },
+      { "title": "ShopName", "type": "cstr", "len": 32 },
+      { "title": "NPCName", "type": "cstr", "len": 32 },
+      { "title": "DescLength", "type": "u32", "use": "NPCDescription", "rule": "length" },
+      { "title": "Description", "type": "cstr", "len": "{DescLength}" }
+    ]
+  },
+  "txt_structures": {
+    "StoreList_TXT": [
+      { "title": "m_strCode", "from": "StoreList", "field": "m_strCode" },
+      { "title": "m_strBinding_DummyName", "from": "StoreList", "field": "m_strBinding_DummyName" },
+      { "title": "m_strStore_NPCcode", "from": "StoreList", "field": "m_strStore_NPCcode" },
+      { "title": "ClientID", "from": "Store", "field": "ID" },
+      { "title": "ShopName", "from": "NDStore", "field": "ShopName" },
+      { "title": "NPCName", "from": "NDStore", "field": "NPCName" },
+      { "title": "NPCDescription", "from": "NDStore", "field": "Description" },
+      { "title": "m_strStore_NPCname", "from": "StoreList", "field": "m_strStore_NPCname" },
+      { "title": "m_strStore_MAPcode", "from": "StoreList", "field": "m_strStore_MAPcode" },
+      { "title": "Race", "from": "Store", "field": "Race" },
+      { "title": "m_nStore_trade", "from": "StoreList", "field": "m_nStore_trade" },
+      { "title": "m_bSet_NPCangle", "from": "StoreList", "field": "m_bSet_NPCangle" },
+      { "title": "m_nStore_NPCangle", "from": "StoreList", "field": "m_nStore_NPCangle" },
+      {
+        "repeat": 10,
+        "fields": [
+          { "title": "{loop}. m_nNpc_Class", "from": "StoreList", "field": "{loop}. m_nNpc_Class" }
+        ]
+      },
+      { "title": "m_nStore_LISTcount", "from": "StoreList", "field": "m_nStore_LISTcount" },
+      { "title": "m_nLimit_Listcount", "from": "StoreList", "field": "m_nLimit_Listcount" },
+      { "title": "m_nLimitItem_InitTime", "from": "StoreList", "field": "m_nLimitItem_InitTime" },
+      { "title": "m_nPriceSet", "from": "StoreList", "field": "m_nPriceSet" },
+      { "title": "m_nItemUpCode", "from": "StoreList", "field": "m_nItemUpCode" },
+      {
+        "repeat": 200,
+        "fields": [
+          {"title": "{loop}. m_strItemlist", "from": "StoreList", "field": "{loop}. m_strItemlist"}
+        ]
+      },
+      {
+        "repeat": 16,
+        "fields": [
+          {"title": "{loop}. m_strItemCode", "from": "StoreList", "field": "{loop}. m_strItemCode"},
+          {"title": "{loop}. m_nMaxCount", "from": "StoreList", "field": "{loop}. m_nMaxCount"}
+        ]
+      },
+      { "title": "??", "from": "Store", "field": "??" },
+      {
+        "repeat": 11,
+        "fields": [
+          {"title": "{loop}. m_str", "from": "StoreListSTR", "field": "{loop}. m_str"}
+        ]
+      }
+    ]
+  },
+  "dat_files": [
+    {
+      "side": "server",
+      "source_file": "Script/StoreList.dat",
+      "header_file": "StoreList.json",
+      "groups": [
+        {
+          "group_name": "StoreList",
+          "header": [
+            { "title": "rows", "type": "u32" },
+            { "title": "columns", "type": "u32" },
+            { "title": "block_size", "type": "u32" }
+          ],
+          "count": "{rows}",
+          "count_override": "rows",
+          "index_override": "m_dwIndex",
+          "structure": "SRV_StoreList_DAT"
+        }
+      ]
+    },
+    {
+      "side": "server",
+      "source_file": "Script/StoreList_str.dat",
+      "header_file": "StoreList_str.json",
+      "groups": [
+        {
+          "group_name": "StoreListSTR",
+          "header": [
+            { "title": "rows", "type": "u32" },
+            { "title": "columns", "type": "u32" },
+            { "title": "block_size", "type": "u32" }
+          ],
+          "count": "{rows}",
+          "count_override": "rows",
+          "index_override": "m_strIndex",
+          "structure": "SRV_StoreListSTR_DAT"
+        }
+      ]
+    },
+    {
+      "side": "client",
+      "source_file": "Store.dat",
+      "header_file": "Store.json",
+      "groups": [
+        {
+          "group_name": "Store",
+          "header": [
+            { "title": "StoreBlocks", "type": "u32" },
+            { "title": "StoreBlockSize", "type": "u32" }
+          ],
+          "count": "{StoreBlocks}",
+          "count_override": "StoreBlocks",
+          "index_override": "Index",
+          "structure": "CLI_Store_DAT"
+        }
+      ]
+    },
+    {
+      "side": "client",
+      "source_file": "ND/NDStore.dat",
+      "header_file": "NDStore.json",
+      "groups": [
+        {
+          "group_name": "NDStore",
+          "header": [
+            { "title": "rows", "type": "u32" }
+          ],
+          "count": "{rows}",
+          "count_override": "rows",
+          "index_override": "Index",
+          "structure": "CLI_NDStore_DAT"
+        }
+      ]
+    }
+  ],
+  "txt_files": [
+    {
+      "output_file": "StoreList.txt",
+      "groups": "StoreList|StoreListSTR|Store|NDStore",
+      "structure": "StoreList_TXT"
+    }
+  ]
+}
