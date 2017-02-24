@@ -2,6 +2,8 @@ from application.config import *
 from application.interface.Workspace import Workspace
 from application.composer.Structure import Structure
 import os
+import re
+import hashlib
 
 
 class Collection:
@@ -13,9 +15,12 @@ class Collection:
 
         self.ui = Workspace(data["name"])
         self.structures = []
+        self.structs_hash = self._get_hash()
 
         self.prepare_catalogs()
         self.ui.setup_workspace()
+
+        self.reload_structures()
 
         self._register_events()
 
@@ -30,6 +35,8 @@ class Collection:
 
     def reload_structures(self):
 
+        print("called")
+
         self.ui.clear_structs_list()
 
         if not self._check_catalog("structs"):
@@ -37,7 +44,7 @@ class Collection:
 
         structs_path = ROOT_PATH + "/" + self.paths["structs"]
 
-        files = os.listdir(structs_path)
+        files = self._get_structure_files()
 
         for file in files:
             structure = Structure(file, structs_path)
@@ -89,10 +96,59 @@ class Collection:
 
         pass
 
+    def _get_structure_files(self):
+
+        if not self._check_catalog("structs"):
+            return []
+
+        path = ROOT_PATH + "/" + self.paths["structs"]
+
+        files = os.listdir(path)
+
+        structs = []
+
+        for file in files:
+            if not os.path.isfile(path + "/" + file):
+                continue
+            if re.search(FILE_EXT_RE("json"), file) is None:
+                continue
+            structs.append(file)
+
+        return structs
+
+        pass
+
+    def _get_hash(self):
+
+        if not self._check_catalog("structs"):
+            return []
+
+        structs_path = ROOT_PATH + "/" + self.paths["structs"]
+
+        files = self._get_structure_files()
+
+        times = ""
+
+        for file in files:
+            times += str(os.path.getmtime(structs_path + "/" + file))
+
+        if times == "":
+            return False
+
+        times = times.encode("utf-8")
+        times_hash = hashlib.md5()
+        times_hash.update(times)
+
+        return times_hash.hexdigest()
+
+        pass
+
     def _register_events(self):
 
+        app = self.ui.get_app_instance()
+
         self._quick_nav_events()
-        self._window_focus_event()
+        app.focusWindowChanged.connect(self._window_focus_event)
 
         pass
 
@@ -119,16 +175,12 @@ class Collection:
 
         pass
 
-    def _window_focus_event(self):
+    def _window_focus_event(self, event):
 
-        app = self.ui.get_app_instance()
-        app.focusWindowChanged.connect(self._on_window_focus)
+        structs_hash = self._get_hash()
 
-        pass
-
-    def _on_window_focus(self, event):
-
-        if event is not None:
+        if structs_hash != self.structs_hash and event is not None:
+            self.structs_hash = structs_hash
             self.reload_structures()
 
         pass

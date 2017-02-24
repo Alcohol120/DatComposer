@@ -24,12 +24,6 @@ class Structure:
 
         pass
 
-    def omg(self):
-
-        return False
-
-        pass
-
     def get_name(self):
 
         return self.name
@@ -57,6 +51,8 @@ class Structure:
             if not self.check_required_blocks():
                 raise ValueError(self.get_error())
             if not self.check_dat_structures():
+                raise ValueError(self.get_error())
+            if not self.check_txt_structures():
                 raise ValueError(self.get_error())
 
         except ValueError:
@@ -126,15 +122,15 @@ class Structure:
     def check_dat_structures(self):
 
         for name, data in self.structure["dat_structures"].items():
-            if type(self.structure["dat_structures"][name]) is not list:
+            if type(data) is not list:
                 self._last_error = "DATStructure '{}' must contain a list ([])!".format(name)
                 return False
-            if len(self.structure["dat_structures"][name]) < 1:
+            if len(data) < 1:
                 self._last_error = "DATStructure '{}' is empty!".format(name)
                 return False
 
             for field in data:
-                # check repeat
+                # check repeated section
                 if "repeat" in field:
                     if type(field["repeat"]) is not int or field["repeat"] < 1:
                         self._last_error = "'repeat' attr must contain int value, over 1!<br>"
@@ -153,8 +149,46 @@ class Structure:
                         if not self._check_dat_field(repeated, name):
                             return False
                 else:
-                    # common fields
+                    # common field
                     if not self._check_dat_field(field, name):
+                        return False
+
+        return True
+
+        pass
+
+    def check_txt_structures(self):
+
+        for name, data in self.structure["txt_structures"].items():
+            if type(data) is not list:
+                self._last_error = "TXTStructure '{}' must contain a list ([])!".format(name)
+                return False
+            if len(data) < 1:
+                self._last_error = "TXTStructure '{}' is empty!".format(name)
+                return False
+
+            for field in data:
+                # check repeated section
+                if "repeat" in field:
+                    if type(field["repeat"]) is not int or field["repeat"] < 1:
+                        self._last_error = "'repeat' attr must contain int value, over 1!<br>"
+                        self._last_error += "txt_structures->{}".format(name)
+                        return False
+                    if "fields" not in field:
+                        self._last_error = "'fields' block is required in repeated section!<br>"
+                        self._last_error += "txt_structures->{}".format(name)
+                        return False
+                    if type(field["fields"]) is not list or len(field["fields"]) < 1:
+                        self._last_error = "'fields' block must contain a list ([]) and can't be empty!<br>"
+                        self._last_error += "txt_structures->{}".format(name)
+                        return False
+
+                    for repeated in field["fields"]:
+                        if not self._check_txt_field(repeated, name):
+                            return False
+                else:
+                    # common field
+                    if not self._check_txt_field(field, name):
                         return False
 
         return True
@@ -218,6 +252,27 @@ class Structure:
         if "use" in field and type(field["use"]) is not str:
             self._last_error = "'rule' attr must contain string value!<br>"
             self._last_error += "dat_structures->{}->{}".format(structure_name, field["title"] or "Unnamed")
+            return False
+
+        return True
+
+        pass
+
+    def _check_txt_field(self, field, structure_name):
+
+        if "title" not in field or type(field["title"]) is not str:
+            self._last_error = "'title' attr is required and must contain a string value!<br>"
+            self._last_error += "txt_structures->{}".format(structure_name)
+            return False
+
+        if "from" not in field or type(field["from"]) is not str:
+            self._last_error = "'from' attr is required and must contain a string value!<br>"
+            self._last_error += "txt_structures->{}".format(structure_name)
+            return False
+
+        if "field" not in field or type(field["field"]) is not str:
+            self._last_error = "'field' attr is required and must contain a string value!<br>"
+            self._last_error += "txt_structures->{}".format(structure_name)
             return False
 
         return True
