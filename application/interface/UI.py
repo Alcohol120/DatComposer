@@ -15,6 +15,20 @@ class UI:
     tabs_items = {}
 
     @staticmethod
+    def get_app_instance():
+
+        return UI.app
+
+        pass
+
+    @staticmethod
+    def get_window():
+
+        return UI.window
+
+        pass
+
+    @staticmethod
     def alert_error(message, title="Error"):
 
         msg = QMessageBox(UI.window)

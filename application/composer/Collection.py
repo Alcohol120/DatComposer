@@ -35,8 +35,6 @@ class Collection:
 
     def reload_structures(self):
 
-        print("called")
-
         self.ui.clear_structs_list()
 
         if not self._check_catalog("structs"):
@@ -58,9 +56,9 @@ class Collection:
 
         pass
 
-    def assert_error(self, message, title=False):
+    def assert_error(self, message, title=""):
 
-        if title:
+        if title != "":
             self.ui.alert_error(message, title)
         else:
             self.ui.alert_error(message)
@@ -92,7 +90,10 @@ class Collection:
 
         for _, path in self.paths.items():
             if not os.path.isdir(ROOT_PATH + "/" + path):
-                os.makedirs(ROOT_PATH + "/" + path)
+                try:
+                    os.makedirs(ROOT_PATH + "/" + path)
+                except PermissionError:
+                    self.assert_error("Can't create collection catalogs!", "Filesystem error!")
 
         pass
 
