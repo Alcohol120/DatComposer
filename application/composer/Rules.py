@@ -3,8 +3,6 @@ import re
 
 class Rules:
 
-    # @TODO refactoring
-
     @staticmethod
     def race_bm(value):
         value = str(value)
@@ -57,49 +55,83 @@ class Rules:
 
     @staticmethod
     def item_code(value):
-        try:
-            item_group_code = {
-                "if": 0,
-                "iu": 1,
-                "il": 2,
-                "ig": 3,
-                "is": 4,
-                "ih": 5,
-                "iw": 6,
-                "id": 7,
-                "ik": 8,
-                "ii": 9,
-                "ia": 10,
-                "ib": 11,
-                "im": 12,
-                "ip": 13,
-                "ie": 14,
-                "it": 15,
-                "io": 16,
-                "ir": 17,
-                "ic": 18,
-                "in": 19,
-                "iy": 20,
-                "iz": 21,
-                "iq": 22,
-                "ix": 23,
-                "ij": 24,
-                "gt": 25,
-                "tr": 26,
-                "sk": 27,
-                "ti": 28,
-                "ey": 29,
-                "re": 30,
-                "bx": 31,
-                "fi": 32,
-                "un": 33,
-                "rd": 34,
-                "lk": 35,
-                "cu": 36
-            }[value[0:2]]
-        except KeyError:
-            item_group_code = 255
-        return item_group_code
+        code = value[0:2]
+        if code == "if":
+            return 0
+        elif code == "iu":
+            return 1
+        elif code == "il":
+            return 2
+        elif code == "ig":
+            return 3
+        elif code == "is":
+            return 4
+        elif code == "ih":
+            return 5
+        elif code == "iw":
+            return 6
+        elif code == "id":
+            return 7
+        elif code == "ik":
+            return 8
+        elif code == "ii":
+            return 9
+        elif code == "ia":
+            return 10
+        elif code == "ib":
+            return 11
+        elif code == "im":
+            return 12
+        elif code == "ip":
+            return 13
+        elif code == "ie":
+            return 14
+        elif code == "it":
+            return 15
+        elif code == "io":
+            return 16
+        elif code == "ir":
+            return 17
+        elif code == "ic":
+            return 18
+        elif code == "in":
+            return 19
+        elif code == "iy":
+            return 20
+        elif code == "iz":
+            return 21
+        elif code == "iq":
+            return 22
+        elif code == "ix":
+            return 23
+        elif code == "ij":
+            return 24
+        elif code == "gt":
+            return 25
+        elif code == "tr":
+            return 26
+        elif code == "sk":
+            return 27
+        elif code == "ti":
+            return 28
+        elif code == "ey":
+            return 29
+        elif code == "re":
+            return 30
+        elif code == "bx":
+            return 31
+        elif code == "fi":
+            return 32
+        elif code == "un":
+            return 33
+        elif code == "rd":
+            return 34
+        elif code == "lk":
+            return 35
+        elif code == "cu":
+            return 36
+        else:
+            return 255
         pass
 
     def item_id(self, value):

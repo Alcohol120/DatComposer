@@ -18,20 +18,6 @@ class Layout(UI):
 
         pass
 
-    # @staticmethod
-    # def get_app_instance():
-    #
-    #     return UI.app
-    #
-    #     pass
-    #
-    # @staticmethod
-    # def get_window():
-    #
-    #     return UI.window
-    #
-    #     pass
-
     # Private Methods
 
     def _build_main_window(self):

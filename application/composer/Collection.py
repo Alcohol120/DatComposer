@@ -40,17 +40,14 @@ class Collection:
         if not self._check_catalog("structs"):
             return []
 
-        structs_path = ROOT_PATH + "/" + self.paths["structs"]
-
         files = self._get_structure_files()
 
         for file in files:
-            structure = Structure(file, structs_path)
+            structure = Structure(file, self.paths)
             structure.set_callback(self)
             if structure.load():
                 self.structures.append(structure)
                 self.ui.add_structure(structure.get_name())
-                structure.validate()
             else:
                 del structure
 
