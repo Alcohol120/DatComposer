@@ -14,7 +14,7 @@ class Collection:
         self.paths = data["paths"]
 
         self.ui = Workspace(data["name"])
-        self.structures = []
+        self.structures = {}
         self.structs_hash = self._get_hash()
 
         self.prepare_catalogs()
@@ -46,10 +46,28 @@ class Collection:
             structure = Structure(file, self.paths)
             structure.set_callback(self)
             if structure.load():
-                self.structures.append(structure)
+                self.structures[file.replace(".json", "")] = structure
                 self.ui.add_structure(structure.get_name())
             else:
                 del structure
+
+        pass
+
+    def validate_selected_structures(self):
+
+        items = self.ui.structs.selectedItems()
+
+        if len(items) == 1:
+            self.structures[items[0].text()].validate()
+        elif len(items) > 1:
+            result = []
+            for item in items:
+                structure = self.structures[item.text()]
+                test = structure.validate_quietly()
+                test["name"] = structure.get_name()
+                result.append(test)
+
+            self.ui.structures_test_result(result)
 
         pass
 
@@ -59,6 +77,24 @@ class Collection:
             self.ui.alert_error(message, title)
         else:
             self.ui.alert_error(message)
+
+        pass
+
+    def assert_success(self, message, title=""):
+
+        if title != "":
+            self.ui.alert_success(message, title)
+        else:
+            self.ui.alert_success(message)
+
+        pass
+
+    def reset_user_actions(self):
+
+        self.ui.clear_browser()
+        self.ui.deselect_encoder_list()
+        self.ui.deselect_decoder_list()
+        self.ui.deselect_structures_list()
 
         pass
 
@@ -148,6 +184,8 @@ class Collection:
         self._quick_nav_events()
         app.focusWindowChanged.connect(self._window_focus_event)
 
+        self.ui.structs.itemSelectionChanged.connect(self._structure_selected_event)
+
         pass
 
     def _quick_nav_events(self):
@@ -180,6 +218,91 @@ class Collection:
         if structs_hash != self.structs_hash and event is not None:
             self.structs_hash = structs_hash
             self.reload_structures()
+
+        pass
+
+    def _structure_selected_event(self):
+
+        self.ui.clear_browser()
+        self.ui.structure_validate_disable()
+
+        items = self.ui.structs.selectedItems()
+
+        if len(items) == 1:
+
+            self.ui.structure_validate_enable()
+            self._structure_selected_single(items[0])
+
+        elif len(items) > 1:
+
+            self.ui.structure_validate_enable()
+            self._structure_selected_several(items)
+
+        pass
+
+    def _structure_selected_single(self, item):
+
+        self.ui.to_dat_disable()
+        self.ui.to_txt_disable()
+
+        structure = self.structures[item.text()]
+
+        if structure.ready_to_dat():
+            self.ui.to_dat_enable()
+        else:
+            self.ui.to_dat_disable()
+
+        if structure.ready_to_txt():
+            self.ui.to_txt_enable()
+        else:
+            self.ui.to_txt_disable()
+
+        self.ui.set_structures_info(structure.get_info())
+
+        pass
+
+    def _structure_selected_several(self, items):
+
+        self.ui.to_dat_enable()
+        self.ui.to_txt_enable()
+
+        structures = []
+        data = {
+            "title": str(len(items)) + " structures selected",
+            "note": "",
+            "dat_count": 0,
+            "txt_count": 0,
+            "dat_files": {
+                "server": [],
+                "client": []
+            },
+            "txt_files": []
+        }
+
+        # get structures instances and structures info
+        for item in items:
+            structure = self.structures[item.text()]
+            info = structure.get_info()
+            data["dat_count"] += info["dat_count"]
+            data["txt_count"] += info["txt_count"]
+            data["dat_files"]["server"].extend(info["dat_files"]["server"])
+            data["dat_files"]["client"].extend(info["dat_files"]["client"])
+            data["txt_files"].extend(info["txt_files"])
+            structures.append(structure)
+
+        # is ready to convert to DAT?
+        for structure in structures:
+            if not structure.ready_to_dat():
+                self.ui.to_dat_disable()
+                break
+
+        # is ready to convert to TXT?
+        for structure in structures:
+            if not structure.ready_to_txt():
+                self.ui.to_txt_disable()
+                break
+
+        self.ui.set_structures_info(data)
 
         pass
 
