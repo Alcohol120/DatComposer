@@ -52,7 +52,21 @@ class Layout(UI):
 
         UI.menu_bar = QMenuBar(UI.window)
         UI.menu_bar.setFixedSize(800, 20)
-        UI.menu_bar_items["file"] = UI.menu_bar.addMenu("File")
+
+        menu_file = UI.menu_bar.addMenu("File")
+
+        UI.menu_bar_items = {
+            "File": {
+                "Convert to TXT": menu_file.addAction("Convert to TXT"),
+                "Convert to DAT": menu_file.addAction("Convert to DAT"),
+                "Validate Structure": menu_file.addAction("Validate Structure"),
+                "Quit": menu_file.addAction("Quit")
+            }
+        }
+
+        UI.menu_bar_items["File"]["Convert to TXT"].setEnabled(0)
+        UI.menu_bar_items["File"]["Convert to DAT"].setEnabled(0)
+        UI.menu_bar_items["File"]["Validate Structure"].setEnabled(0)
 
         pass
 
@@ -62,6 +76,8 @@ class Layout(UI):
         UI.tabs = QTabWidget(UI.window)
         UI.tabs.move(5, 25)
         UI.tabs.setFixedSize(790, 570)
+
+        # QTabWidget.currentIndex()
 
         # fix
         tab = QWidget()

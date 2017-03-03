@@ -41,7 +41,10 @@ class Structure:
 
         # check general structure blocks
         try:
+
+            self._check_additional_params()
             self._check_required_blocks()
+
         except ValueError:
             return False
 
@@ -56,7 +59,7 @@ class Structure:
                 file_path += self.paths["srv_dat"] + "/" + file["source_file"]
             else:
                 file_path += self.paths["cli_dat"] + "/" + file["source_file"]
-            file_instance = DATFile(file["source_file"], file_path)
+            file_instance = DATFile(file["source_file"], file_path, file["side"])
             self.dat_files.append(file_instance)
 
         for file in self.structure["txt_files"]:
@@ -66,15 +69,103 @@ class Structure:
             file_instance = TXTFile(file["output_file"], file_path)
             self.txt_files.append(file_instance)
 
+        self.dat_files[0].is_exists()
+
         return True
 
         pass
 
     def validate(self):
 
-        if not self.structure:
-            self.callback.assert_error("Cannot find structure data!", "Runtime error!")
+        result = self._test()
+
+        if result["success"]:
+            self.callback.assert_success("<span style='color: green'>{}</span>".format(result["title"]))
+            return True
+        else:
+            error_string = "<p style='color: red'>{}</p>{}".format(result["title"], result["error_message"])
+            self.callback.assert_error(error_string, result["error_type"])
             return False
+
+        pass
+
+    def validate_quietly(self):
+
+        return self._test()
+
+        pass
+
+    def ready_to_txt(self):
+
+        for file in self.dat_files:
+            if not file.is_exists():
+                return False
+
+        return True
+
+        pass
+
+    def ready_to_dat(self):
+
+        for file in self.txt_files:
+            if not file.is_exists():
+                return False
+
+        return True
+
+        pass
+
+    def get_info(self):
+
+        data = {
+            "title": self.name,
+            "note": "",
+            "dat_count": len(self.structure["dat_files"]),
+            "txt_count": len(self.structure["txt_files"]),
+            "dat_files": {
+                "server": [],
+                "client": []
+            },
+            "txt_files": []
+        }
+
+        if "note" in self.structure:
+            data["note"] = self.structure["note"]
+        else:
+            data["note"] = ""
+
+        for file in self.dat_files:
+            data["dat_files"][file.get_side()].append({
+                "name": file.get_name(),
+                "exists": file.is_exists()
+            })
+
+        for file in self.txt_files:
+            data["txt_files"].append({
+                "name": self.name + "/" + file.get_name(),
+                "exists": file.is_exists()
+            })
+
+        return data
+
+        pass
+
+    def set_callback(self, callback):
+
+        self.callback.set_callback(callback)
+
+        pass
+
+    # Private Methods
+
+    def _test(self):
+
+        if not self.structure:
+            return {
+                "success": False,
+                "error_type": "Runtime error!",
+                "error_message": "Cannot find structure data!"
+            }
 
         try:
 
@@ -101,23 +192,26 @@ class Structure:
             self._check_fields_linking()
 
         except ValueError as error:
-            self.callback.assert_error(self.name + " is invalid!<br>" + str(error), "Structure validation failed!")
-            return False
+            return {
+                "success": False,
+                "title": self.name + " is invalid!",
+                "error_type": "Structure validation failed!",
+                "error_message": str(error)
+            }
         except RuntimeError as error:
-            self.callback.assert_error(self.name + " is invalid!<br>" + str(error), "Runtime error!")
-            return False
+            return {
+                "success": False,
+                "title": self.name + " is invalid!",
+                "error_type": "Runtime error!",
+                "error_message": str(error)
+            }
 
-        return True
+        return {
+            "success": True,
+            "title": self.name + " is valid!"
+        }
 
         pass
-
-    def set_callback(self, callback):
-
-        self.callback.set_callback(callback)
-
-        pass
-
-    # Private Methods
 
     def _check_additional_params(self):
 

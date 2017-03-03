@@ -39,13 +39,162 @@ class Workspace(UI):
 
         pass
 
+    def deselect_encoder_list(self):
+
+        self.encoder["files"].clearSelection()
+
+        pass
+
+    def deselect_decoder_list(self):
+
+        self.decoder["files"].clearSelection()
+
+        pass
+
+    def deselect_structures_list(self):
+
+        self.structs.clearSelection()
+
+        pass
+
     def add_structure(self, structure):
 
         self.structs.addItem(structure)
 
         pass
 
+    def to_dat_enable(self):
+
+        self.controls["to_dat"].setEnabled(1)
+        UI.menu_bar_items["File"]["Convert to DAT"].setEnabled(1)
+
+        pass
+
+    def to_dat_disable(self):
+
+        self.controls["to_dat"].setEnabled(0)
+        UI.menu_bar_items["File"]["Convert to DAT"].setEnabled(0)
+
+        pass
+
+    def to_txt_enable(self):
+
+        self.controls["to_txt"].setEnabled(1)
+        UI.menu_bar_items["File"]["Convert to TXT"].setEnabled(1)
+
+        pass
+
+    def to_txt_disable(self):
+
+        self.controls["to_txt"].setEnabled(0)
+        UI.menu_bar_items["File"]["Convert to TXT"].setEnabled(0)
+
+        pass
+
+    @staticmethod
+    def structure_validate_enable():
+
+        UI.menu_bar_items["File"]["Validate Structure"].setEnabled(1)
+
+        pass
+
+    @staticmethod
+    def structure_validate_disable():
+
+        UI.menu_bar_items["File"]["Validate Structure"].setEnabled(0)
+
+        pass
+
+    def set_browser(self, text):
+
+        self.browser.setText(text)
+
+        pass
+
+    def clear_browser(self):
+
+        self.browser.setText("")
+
+        pass
+
+    def set_structures_info(self, data):
+
+        html = """
+        <table width='100%' cellspacing='0'>
+        <tr>
+            <td colspan='2' align='center'><strong>{}</strong></td>
+        </tr>
+        <tr>
+            <td align='center'>DAT Files</td>
+            <td align='center'>TXT Files</td>
+        </tr>
+        <tr>
+            <td align='center'>{}</td>
+            <td align='center'>{}</td>
+        </tr>
+        </table>""".format(data["title"], data["dat_count"], data["txt_count"])
+
+        if data["note"] != "":
+            html += "<p style='color: #777'><i>{}</i></p>".format(data["note"])
+        else:
+            html += "<br><br>"
+
+        html += "<strong>DAT Files:</strong><br>"
+
+        if len(data["dat_files"]["server"]) > 0:
+            html += "<u>Server files</u>"
+            rows = self._create_files_rows(data["dat_files"]["server"])
+            html += "<table width='100%'>{}</table>".format(rows)
+
+        if len(data["dat_files"]["client"]) > 0:
+            html += "<u>Client files</u>"
+            rows = self._create_files_rows(data["dat_files"]["client"])
+            html += "<table width='100%'>{}</table>".format(rows)
+
+        html += "<br><br><strong>TXT Files:</strong>"
+        rows = self._create_files_rows(data["txt_files"])
+        html += "<table width='100%'>{}</table>".format(rows)
+
+        self.set_browser(html)
+
+        pass
+
+    def structures_test_result(self, data):
+
+        html = "<p><strong>{} structures tested!</strong></p>".format(str(len(data)))
+
+        success = True
+
+        for item in data:
+            if not item["success"]:
+                success = False
+                html += "<p><span style='color: red'>{}</span><br>{}</p>".format(item["title"], item["error_message"])
+            else:
+                html += "<p style='color: green'>{}</p>".format(item["title"])
+
+        if success:
+            self.alert_success(html, "Structure validation success!")
+        else:
+            self.alert_error(html, "Structure validation failed!")
+
+        pass
+
     # Private Methods
+
+    def _create_files_rows(self, files):
+
+        html = ""
+
+        for file in files:
+            if file["exists"]:
+                status = "<span style='color: green;'>Ready</span>"
+            else:
+                status = "<span style='color: red;'>Missing</span>"
+            html += "<tr><td>{}</td><td align='right'>{}</td></tr>".format(file["name"], status)
+
+        return html
+
+        pass
 
     def _create_tab(self):
 
@@ -133,6 +282,7 @@ class Workspace(UI):
         info_browser = QTextBrowser(self.composer_box)
         info_browser.move(220, 135)
         info_browser.setFixedSize(290, 300)
+        info_browser.setFont(QtGui.QFont("Courier", 9))
 
         self.browser = info_browser
 

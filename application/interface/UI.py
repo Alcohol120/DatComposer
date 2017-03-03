@@ -39,4 +39,15 @@ class UI:
 
         pass
 
+    @staticmethod
+    def alert_success(message, title="Success"):
+
+        msg = QMessageBox(UI.window)
+        msg.setText(message)
+        msg.setWindowTitle(title)
+        msg.setIcon(QMessageBox.Information)
+        msg.exec()
+
+        pass
+
     pass
