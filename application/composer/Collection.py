@@ -3,7 +3,11 @@ from application.interface.Workspace import Workspace
 from application.composer.Structure import Structure
 import os
 import re
+import math
+import time
+import datetime
 import hashlib
+import threading
 
 
 class Collection:
@@ -16,6 +20,11 @@ class Collection:
         self.ui = Workspace(data["name"])
         self.structures = {}
         self.structs_hash = self._get_hash()
+
+        # tasks
+        self.task_active = False
+        self.task_queue = []
+        self.task_steps = 0
 
         self.prepare_catalogs()
         self.ui.setup_workspace()
@@ -68,6 +77,66 @@ class Collection:
                 result.append(test)
 
             self.ui.structures_test_result(result)
+
+        pass
+
+    def convert_to_dat(self):
+
+        pass
+
+    def convert_to_txt(self):
+
+        items = self.ui.structs.selectedItems()
+        self.task_queue = []
+        self.task_steps = 0
+
+        if len(items) > 0:
+
+            print("Start converting to TXT {} structures!".format(str(len(items))))
+
+            # validate structures
+            for item in items:
+                test_result = self.structures[item.text()].validate_quietly()
+                if not test_result["success"]:
+                    error = "<p><span style='color: red;'>{}</span></p>".format(test_result["title"])
+                    error += test_result["error_message"]
+                    self.assert_error(error, test_result["error_type"])
+                    return False
+
+            # prepare task
+            for item in items:
+                struct = self.structures[item.text()]
+                self.task_steps += struct.get_steps_count()
+                thread = threading.Thread(target=struct.to_txt)
+                thread.setDaemon(True)
+                self.task_queue.append(thread)
+
+            # show progress bar
+            self.ui.show_progress()
+
+            # start task
+            thread = threading.Thread(target=self._start_tasks)
+            thread.setDaemon(True)
+            thread.start()
+
+            return True
+
+        pass
+
+    def _start_tasks(self):
+
+        start_time = time.time()
+
+        for index, task in enumerate(self.task_queue):
+            print("Task #{} started!".format(index))
+            task.start()
+            while task.isAlive():
+                continue
+            print("Task #{} completed!".format(index))
+
+        working_time = math.floor(time.time() - start_time)
+        working_time = datetime.timedelta(seconds=working_time)
+        print("Converting complete by: {}".format(working_time))
 
         pass
 
@@ -181,10 +250,15 @@ class Collection:
 
         app = self.ui.get_app_instance()
 
+        # quick navigation events
         self._quick_nav_events()
+        # window focused event
         app.focusWindowChanged.connect(self._window_focus_event)
-
+        # structure selection event
         self.ui.structs.itemSelectionChanged.connect(self._structure_selected_event)
+        # convert events
+        self.ui.controls["to_dat"].clicked.connect(self.convert_to_dat)
+        self.ui.controls["to_txt"].clicked.connect(self.convert_to_txt)
 
         pass
 
@@ -213,9 +287,17 @@ class Collection:
 
     def _window_focus_event(self, event):
 
+        if event is None:
+            return
+
+        if self.task_active:
+            return
+
+        print("RELOADING")
+
         structs_hash = self._get_hash()
 
-        if structs_hash != self.structs_hash and event is not None:
+        if structs_hash != self.structs_hash:
             self.structs_hash = structs_hash
             self.reload_structures()
 
@@ -224,18 +306,18 @@ class Collection:
     def _structure_selected_event(self):
 
         self.ui.clear_browser()
-        self.ui.structure_validate_disable()
+        self.ui.test_structure_disable()
 
         items = self.ui.structs.selectedItems()
 
         if len(items) == 1:
 
-            self.ui.structure_validate_enable()
+            self.ui.test_structure_enable()
             self._structure_selected_single(items[0])
 
         elif len(items) > 1:
 
-            self.ui.structure_validate_enable()
+            self.ui.test_structure_enable()
             self._structure_selected_several(items)
 
         pass

@@ -6,7 +6,6 @@ from application.composer.TXTFile import TXTFile
 import re
 import json
 import copy
-from collections import OrderedDict
 
 
 class Structure:
@@ -18,12 +17,14 @@ class Structure:
         self.file_path = ROOT_PATH + "/" + paths["structs"] + "/" + file_name
         self.paths = paths
 
-        self.structure = OrderedDict()
+        self.structure = {}
 
         self.dat_files = []
         self.txt_files = []
 
         self.callback = Callback()
+
+        self.task_steps = 0
 
         pass
 
@@ -41,15 +42,21 @@ class Structure:
 
         # check general structure blocks
         try:
-
-            self._check_additional_params()
             self._check_required_blocks()
-
         except ValueError:
             return False
 
         # init file objects
+        self._init_file_objects()
+
+        return True
+
+        pass
+
+    def _init_file_objects(self):
+
         for file in self.structure["dat_files"]:
+            # check required parameters
             if "side" not in file or (file["side"] != "server" and file["side"] != "client"):
                 continue
             if "source_file" not in file or re.search(FILE_PATH_EXT_RE("dat"), file["source_file"]) is None:
@@ -59,19 +66,33 @@ class Structure:
                 file_path += self.paths["srv_dat"] + "/" + file["source_file"]
             else:
                 file_path += self.paths["cli_dat"] + "/" + file["source_file"]
-            file_instance = DATFile(file["source_file"], file_path, file["side"])
+
+            # init object
+            file_data = copy.deepcopy(file)
+            for group in file_data["groups"]:
+                if group["structure"] in self.structure["dat_structures"]:
+                    group["structure"] = self.structure["dat_structures"][group["structure"]].copy()
+                else:
+                    group["structure"] = False
+
+            file_instance = DATFile(file["source_file"], file_path, file_data)
             self.dat_files.append(file_instance)
 
         for file in self.structure["txt_files"]:
+            # check required parameters
             if "output_file" not in file or re.search(FILE_PATH_EXT_RE("txt"), file["output_file"]) is None:
                 continue
             file_path = ROOT_PATH + "/" + self.paths["txt"] + "/" + self.name + "/" + file["output_file"]
-            file_instance = TXTFile(file["output_file"], file_path)
+
+            # init object
+            file_data = copy.deepcopy(file)
+            if file_data["structure"] in self.structure["txt_structures"]:
+                file_data["structure"] = self.structure["txt_structures"][file_data["structure"]].copy()
+            else:
+                file_data["structure"] = False
+
+            file_instance = TXTFile(file["output_file"], file_path, file_data)
             self.txt_files.append(file_instance)
-
-        self.dat_files[0].is_exists()
-
-        return True
 
         pass
 
@@ -129,7 +150,7 @@ class Structure:
             "txt_files": []
         }
 
-        if "note" in self.structure:
+        if "note" in self.structure and type(self.structure["note"]) is str:
             data["note"] = self.structure["note"]
         else:
             data["note"] = ""
@@ -147,6 +168,32 @@ class Structure:
             })
 
         return data
+
+        pass
+
+    def get_steps_count(self):
+
+        total = len(self.structure["txt_files"])
+        for file in self.structure["dat_files"]:
+            total += len(file["groups"])
+
+        return total
+
+        pass
+
+    def to_dat(self):
+
+        pass
+
+    def to_txt(self):
+
+        self.task_steps = 0
+
+        # reading DAT files
+        for file in self.dat_files:
+            if not file.read():
+                return False
+            self.task_steps += file.get_total_rows()
 
         pass
 
@@ -170,7 +217,6 @@ class Structure:
         try:
 
             # validate general blocks
-            self._check_additional_params()
             self._check_required_blocks()
             # validate structures
             for name, data in self.structure["dat_structures"].items():
@@ -213,22 +259,12 @@ class Structure:
 
         pass
 
-    def _check_additional_params(self):
-
-        if "note" in self.structure and type(self.structure["note"]) is not str:
-            error = "'note' attr must contain string value!"
-            raise ValueError(error)
-
-        return True
-
-        pass
-
     def _check_required_blocks(self):
 
         if "dat_structures" not in self.structure:
             error = "'dat_structures' block are required!"
             raise ValueError(error)
-        if type(self.structure["dat_structures"]) is not OrderedDict:
+        if type(self.structure["dat_structures"]) is not dict:
             error = "'dat_structures' block must contain a dictionary ({})!"
             raise ValueError(error)
         if len(self.structure["dat_structures"]) < 1:
@@ -238,7 +274,7 @@ class Structure:
         if "txt_structures" not in self.structure:
             error = "'txt_structures' block are required!"
             raise ValueError(error)
-        if type(self.structure["txt_structures"]) is not OrderedDict:
+        if type(self.structure["txt_structures"]) is not dict:
             error = "'txt_structures' block must contain a dictionary ({})!"
             raise ValueError(error)
         if len(self.structure["txt_structures"]) < 1:
@@ -536,7 +572,7 @@ class Structure:
                 for field in group["header"]:
                     variables.append(field["title"])
                 # check 'count' attr
-                count = copy.copy(group["count"])
+                count = group["count"]
                 if type(count) is str:
                     # parse variables
                     founded_vars = re.findall("\{(.*?)\}", count)
@@ -734,7 +770,7 @@ class Structure:
             if "repeat" in field:
                 for loop in range(field["repeat"]):
                     for repeated in field["fields"]:
-                        row = copy.copy(repeated)
+                        row = repeated.copy()
 
                         if re.search("\{loop\}", row["title"]):
                             row["title"] = row["title"].replace("{loop}", str(loop + 1))
@@ -778,7 +814,7 @@ class Structure:
             file = open(self.file_path, "r")
             structure = file.read()
             file.close()
-            structure = json.loads(structure, object_pairs_hook=OrderedDict)
+            structure = json.loads(structure)
         except FileNotFoundError:
             return False
         except PermissionError:

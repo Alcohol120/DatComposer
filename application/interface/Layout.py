@@ -59,14 +59,14 @@ class Layout(UI):
             "File": {
                 "Convert to TXT": menu_file.addAction("Convert to TXT"),
                 "Convert to DAT": menu_file.addAction("Convert to DAT"),
-                "Validate Structure": menu_file.addAction("Validate Structure"),
+                "Test Structure": menu_file.addAction("Test Structure"),
                 "Quit": menu_file.addAction("Quit")
             }
         }
 
         UI.menu_bar_items["File"]["Convert to TXT"].setEnabled(0)
         UI.menu_bar_items["File"]["Convert to DAT"].setEnabled(0)
-        UI.menu_bar_items["File"]["Validate Structure"].setEnabled(0)
+        UI.menu_bar_items["File"]["Test Structure"].setEnabled(0)
 
         pass
 

@@ -122,7 +122,7 @@ class Core:
     def _register_events(self):
 
         self.layout.menu_bar_items["File"]["Quit"].triggered.connect(sys.exit)
-        self.layout.menu_bar_items["File"]["Validate Structure"].triggered.connect(self._validate_structure_event)
+        self.layout.menu_bar_items["File"]["Test Structure"].triggered.connect(self._validate_structure_event)
         self.layout.tabs.currentChanged.connect(self._tab_changed_event)
 
         pass
@@ -139,7 +139,7 @@ class Core:
 
         self.layout.menu_bar_items["File"]["Convert to TXT"].setEnabled(0)
         self.layout.menu_bar_items["File"]["Convert to DAT"].setEnabled(0)
-        self.layout.menu_bar_items["File"]["Validate Structure"].setEnabled(0)
+        self.layout.menu_bar_items["File"]["Test Structure"].setEnabled(0)
 
         for collection in self.collections:
             collection.reset_user_actions()

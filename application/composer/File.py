@@ -9,6 +9,8 @@ class File:
         self.file_name = file_name
         self.file_path = file_path
 
+        self.source = ""
+
         pass
 
     def get_name(self):
@@ -26,11 +28,11 @@ class File:
 
         pass
 
-    def _read(self):
+    def read(self):
 
         try:
-            file = open(self.file_path, "r")
-            structure = file.read()
+            file = open(self.file_path, "rb")
+            data = file.read()
             file.close()
         except FileNotFoundError:
             return False
@@ -39,7 +41,7 @@ class File:
         except ValueError:
             return False
 
-        self.structure = structure
+        self.source = data
 
         return True
 

@@ -18,6 +18,11 @@ class Workspace(UI):
         self.quick_nav = {}
         self.encoder = {}
         self.decoder = {}
+        self.progress = {
+            "window": QDialog,
+            "current": QProgressBar(),
+            "total": QProgressBar()
+        }
 
         pass
 
@@ -30,6 +35,7 @@ class Workspace(UI):
         self._create_browser()
         self._create_quick_nav()
         self._create_encoder_tabs()
+        self._create_progress_dialog()
 
         pass
 
@@ -92,16 +98,16 @@ class Workspace(UI):
         pass
 
     @staticmethod
-    def structure_validate_enable():
+    def test_structure_enable():
 
-        UI.menu_bar_items["File"]["Validate Structure"].setEnabled(1)
+        UI.menu_bar_items["File"]["Test Structure"].setEnabled(1)
 
         pass
 
     @staticmethod
-    def structure_validate_disable():
+    def test_structure_disable():
 
-        UI.menu_bar_items["File"]["Validate Structure"].setEnabled(0)
+        UI.menu_bar_items["File"]["Test Structure"].setEnabled(0)
 
         pass
 
@@ -179,9 +185,30 @@ class Workspace(UI):
 
         pass
 
+    def show_progress(self):
+
+        self.progress["current"].setValue(0)
+        self.progress["total"].setValue(0)
+        self.progress["window"].show()
+
+        pass
+
+    def set_current_progress(self, value):
+
+        self.progress["current"].setValue(int(value))
+
+        pass
+
+    def set_total_progress(self, value):
+
+        self.progress["total"].setValue(int(value))
+
+        pass
+
     # Private Methods
 
-    def _create_files_rows(self, files):
+    @staticmethod
+    def _create_files_rows(files):
 
         html = ""
 
@@ -392,6 +419,30 @@ class Workspace(UI):
             self.encoder = elements
         else:
             self.decoder = elements
+
+        pass
+
+    def _create_progress_dialog(self):
+
+        dialog = QDialog(UI.window, QtCore.Qt.WindowSystemMenuHint | QtCore.Qt.WindowTitleHint)
+        dialog.setWindowModality(QtCore.Qt.WindowModal)
+        dialog.setWindowTitle("Executing...")
+        dialog.setFixedWidth(400)
+
+        layout = QVBoxLayout(dialog)
+
+        progress_current = QProgressBar()
+        progress_current.setValue(0)
+
+        progress_total = QProgressBar()
+        progress_total.setValue(0)
+
+        layout.addWidget(progress_current, alignment=QtCore.Qt.AlignBaseline)
+        layout.addWidget(progress_total, alignment=QtCore.Qt.AlignBaseline)
+
+        self.progress["window"] = dialog
+        self.progress["current"] = progress_current
+        self.progress["total"] = progress_total
 
         pass
 
