@@ -11,17 +11,18 @@ class Workspace(UI):
 
         self.name = collection_name
 
-        self.composer_box = QGroupBox()
-        self.structs = QListWidget()
+        self.composer_box = QGroupBox
+        self.structs = QListWidget
         self.controls = {}
-        self.browser = QTextBrowser()
+        self.browser = QTextBrowser
         self.quick_nav = {}
         self.encoder = {}
         self.decoder = {}
         self.progress = {
             "window": QDialog,
-            "current": QProgressBar(),
-            "total": QProgressBar()
+            "current": QProgressBar,
+            "total": QProgressBar,
+            "texts": {}
         }
 
         pass
@@ -119,7 +120,7 @@ class Workspace(UI):
 
     def clear_browser(self):
 
-        self.browser.setText("")
+        self.browser.clear()
 
         pass
 
@@ -185,23 +186,39 @@ class Workspace(UI):
 
         pass
 
-    def show_progress(self):
+    def show_progress(self, title="Executing..."):
 
         self.progress["current"].setValue(0)
         self.progress["total"].setValue(0)
+        self.progress["texts"]["current"].setText("")
+        self.progress["texts"]["total"].setText("")
+        self.progress["window"].setWindowTitle(str(title))
         self.progress["window"].show()
+        UI.app.processEvents()
+
+        pass
+
+    def set_progress_text_current(self, value):
+
+        self.progress["texts"]["current"].setText(value)
+
+        pass
+
+    def set_progress_text_total(self, value):
+
+        self.progress["texts"]["total"].setText(value)
 
         pass
 
     def set_current_progress(self, value):
 
-        self.progress["current"].setValue(int(value))
+        self.progress["current"].setValue(value)
 
         pass
 
     def set_total_progress(self, value):
 
-        self.progress["total"].setValue(int(value))
+        self.progress["total"].setValue(value)
 
         pass
 
@@ -437,12 +454,19 @@ class Workspace(UI):
         progress_total = QProgressBar()
         progress_total.setValue(0)
 
+        text_1 = QLabel("")
+        text_2 = QLabel("")
+
+        layout.addWidget(text_1, alignment=QtCore.Qt.AlignBaseline)
         layout.addWidget(progress_current, alignment=QtCore.Qt.AlignBaseline)
+        layout.addWidget(text_2, alignment=QtCore.Qt.AlignBaseline)
         layout.addWidget(progress_total, alignment=QtCore.Qt.AlignBaseline)
 
         self.progress["window"] = dialog
         self.progress["current"] = progress_current
         self.progress["total"] = progress_total
+        self.progress["texts"]["current"] = text_1
+        self.progress["texts"]["total"] = text_2
 
         pass
 

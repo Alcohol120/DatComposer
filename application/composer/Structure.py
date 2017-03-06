@@ -1,5 +1,4 @@
 from application.config import *
-from application.composer.Callback import Callback
 from application.composer.Rules import rules
 from application.composer.DATFile import DATFile
 from application.composer.TXTFile import TXTFile
@@ -22,15 +21,37 @@ class Structure:
         self.dat_files = []
         self.txt_files = []
 
-        self.callback = Callback()
+        self.callbacks = {
+            "assert_error": self._assert_error,
+            "update_progress": self._callback_dummy,
+            "update_total": self._callback_dummy,
+            "update_progress_text": self._callback_dummy
+        }
 
-        self.task_steps = 0
+        self.total_steps = 0
+        self.current_step = 0
 
         pass
 
     def get_name(self):
 
         return self.name
+
+        pass
+
+    def set_callbacks(self, callbacks):
+
+        if "assert_error" in callbacks:
+            self.callbacks["assert_error"] = callbacks["assert_error"]
+
+        if "update_progress" in callbacks:
+            self.callbacks["update_progress"] = callbacks["update_progress"]
+
+        if "update_total" in callbacks:
+            self.callbacks["update_total"] = callbacks["update_total"]
+
+        if "update_progress_text" in callbacks:
+            self.callbacks["update_progress_text"] = callbacks["update_progress_text"]
 
         pass
 
@@ -47,72 +68,75 @@ class Structure:
             return False
 
         # init file objects
-        self._init_file_objects()
-
-        return True
-
-        pass
-
-    def _init_file_objects(self):
-
         for file in self.structure["dat_files"]:
             # check required parameters
             if "side" not in file or (file["side"] != "server" and file["side"] != "client"):
                 continue
             if "source_file" not in file or re.search(FILE_PATH_EXT_RE("dat"), file["source_file"]) is None:
                 continue
-            file_path = ROOT_PATH + "/"
-            if file["side"] == "server":
-                file_path += self.paths["srv_dat"] + "/" + file["source_file"]
-            else:
-                file_path += self.paths["cli_dat"] + "/" + file["source_file"]
-
-            # init object
-            file_data = copy.deepcopy(file)
-            for group in file_data["groups"]:
-                if group["structure"] in self.structure["dat_structures"]:
-                    group["structure"] = self.structure["dat_structures"][group["structure"]].copy()
-                else:
-                    group["structure"] = False
-
-            file_instance = DATFile(file["source_file"], file_path, file_data)
-            self.dat_files.append(file_instance)
+            self._init_dat_file(file)
 
         for file in self.structure["txt_files"]:
             # check required parameters
             if "output_file" not in file or re.search(FILE_PATH_EXT_RE("txt"), file["output_file"]) is None:
                 continue
-            file_path = ROOT_PATH + "/" + self.paths["txt"] + "/" + self.name + "/" + file["output_file"]
+            self._init_txt_file(file)
 
-            # init object
-            file_data = copy.deepcopy(file)
-            if file_data["structure"] in self.structure["txt_structures"]:
-                file_data["structure"] = self.structure["txt_structures"][file_data["structure"]].copy()
-            else:
-                file_data["structure"] = False
-
-            file_instance = TXTFile(file["output_file"], file_path, file_data)
-            self.txt_files.append(file_instance)
+        return True
 
         pass
 
     def validate(self):
 
-        result = self._test()
+        if not self.structure:
+            return {
+                "success": False,
+                "error_type": "Runtime error!",
+                "error_message": "Cannot find structure data!"
+            }
 
-        if result["success"]:
-            self.callback.assert_success("<span style='color: green'>{}</span>".format(result["title"]))
-            return True
-        else:
-            error_string = "<p style='color: red'>{}</p>{}".format(result["title"], result["error_message"])
-            self.callback.assert_error(error_string, result["error_type"])
-            return False
+        try:
 
-        pass
+            # validate general blocks
+            self._check_required_blocks()
+            # validate structures
+            for name, data in self.structure["dat_structures"].items():
+                self._check_structure(name, "dat", data)
+            for name, data in self.structure["txt_structures"].items():
+                self._check_structure(name, "txt", data)
+            # validate files
+            for dat_file in self.structure["dat_files"]:
+                self._check_dat_file(dat_file)
+            for txt_file in self.structure["txt_files"]:
+                self._check_txt_files(txt_file)
+            # check dat headers
+            self._check_file_headers()
+            self._check_file_names()
+            # check usage
+            self._check_structures_usage()
+            self._check_groups_usage()
+            # check fields linking
+            self._check_fields_linking()
 
-    def validate_quietly(self):
+        except ValueError as error:
+            return {
+                "success": False,
+                "title": self.name + " is invalid!",
+                "error_type": "Structure validation failed!",
+                "error_message": str(error)
+            }
+        except RuntimeError as error:
+            return {
+                "success": False,
+                "title": self.name + " is invalid!",
+                "error_type": "Runtime error!",
+                "error_message": str(error)
+            }
 
-        return self._test()
+        return {
+            "success": True,
+            "title": self.name + " is valid!"
+        }
 
         pass
 
@@ -171,7 +195,7 @@ class Structure:
 
         pass
 
-    def get_steps_count(self):
+    def get_total_steps(self):
 
         total = len(self.structure["txt_files"])
         for file in self.structure["dat_files"]:
@@ -187,75 +211,82 @@ class Structure:
 
     def to_txt(self):
 
-        self.task_steps = 0
+        self.total_steps = self.get_total_steps()
+        self.current_step = 0
 
         # reading DAT files
         for file in self.dat_files:
             if not file.read():
                 return False
-            self.task_steps += file.get_total_rows()
+            result = file.parse()
+            if not result["success"]:
+                self.callbacks["assert_error"](result["error"], file.get_name() + " reading error!")
+                break
 
         pass
 
-    def set_callback(self, callback):
+    def step_completed(self):
 
-        self.callback.set_callback(callback)
+        self.current_step += 1
+        self.callbacks["update_progress"](0)
+        self.callbacks["update_total"](self.current_step / (self.total_steps / 100))
 
         pass
 
     # Private Methods
 
-    def _test(self):
+    def _init_dat_file(self, file):
 
-        if not self.structure:
-            return {
-                "success": False,
-                "error_type": "Runtime error!",
-                "error_message": "Cannot find structure data!"
-            }
+        file_data = copy.deepcopy(file)
 
-        try:
+        # get file path
+        file_path = ROOT_PATH + "/"
+        if file["side"] == "server":
+            file_path += self.paths["srv_dat"] + "/" + file["source_file"]
+        else:
+            file_path += self.paths["cli_dat"] + "/" + file["source_file"]
 
-            # validate general blocks
-            self._check_required_blocks()
-            # validate structures
-            for name, data in self.structure["dat_structures"].items():
-                self._check_structure(name, "dat", data)
-            for name, data in self.structure["txt_structures"].items():
-                self._check_structure(name, "txt", data)
-            # validate files
-            for dat_file in self.structure["dat_files"]:
-                self._check_dat_file(dat_file)
-            for txt_file in self.structure["txt_files"]:
-                self._check_txt_files(txt_file)
-            # check dat headers
-            self._check_file_headers()
-            self._check_file_names()
-            # check usage
-            self._check_structures_usage()
-            self._check_groups_usage()
-            # check fields linking
-            self._check_fields_linking()
+        # add catalog name
+        file_data["catalog_name"] = self.name
 
-        except ValueError as error:
-            return {
-                "success": False,
-                "title": self.name + " is invalid!",
-                "error_type": "Structure validation failed!",
-                "error_message": str(error)
-            }
-        except RuntimeError as error:
-            return {
-                "success": False,
-                "title": self.name + " is invalid!",
-                "error_type": "Runtime error!",
-                "error_message": str(error)
-            }
+        # replace structure
+        for group in file_data["groups"]:
+            if group["structure"] in self.structure["dat_structures"]:
+                struct = self.structure["dat_structures"][group["structure"]]
+                group["structure"] = self._get_structure_fields_map(struct)
+            else:
+                group["structure"] = False
 
-        return {
-            "success": True,
-            "title": self.name + " is valid!"
-        }
+        # init object
+        file_instance = DATFile(file["source_file"], file_path, file_data)
+        file_instance.set_callbacks({
+            "update_progress": self.callbacks["update_progress"],
+            "update_progress_text": self.callbacks["update_progress_text"],
+            "step_completed": self.step_completed
+        })
+        self.dat_files.append(file_instance)
+
+        pass
+
+    def _init_txt_file(self, file):
+
+        file_data = copy.deepcopy(file)
+
+        file_path = ROOT_PATH + "/" + self.paths["txt"] + "/" + self.name + "/" + file["output_file"]
+
+        # add catalog name
+        file_data["catalog_name"] = self.name
+
+        # replace structure
+        if file_data["structure"] in self.structure["txt_structures"]:
+            struct = self.structure["txt_structures"][file_data["structure"]]
+            file_data["structure"] = self._get_structure_fields_map(struct)
+        else:
+            file_data["structure"] = False
+
+        # init object
+        file_instance = TXTFile(file["output_file"], file_path, file_data)
+        self.txt_files.append(file_instance)
 
         pass
 
@@ -570,6 +601,10 @@ class Structure:
                 if "header" not in group:
                     continue
                 for field in group["header"]:
+                    if field["title"] in variables:
+                        error = "Header field name '{}' already exist!<br>".format(field["title"])
+                        error += "In: dat_files->groups->{}->header".format(group["group_name"])
+                        raise ValueError(error)
                     variables.append(field["title"])
                 # check 'count' attr
                 count = group["count"]
@@ -857,6 +892,20 @@ class Structure:
             return True
 
         return False
+
+        pass
+
+    @staticmethod
+    def _assert_error(message, title=""):
+
+        print("Structure error: " + message + " | " + title)
+
+        pass
+
+    @staticmethod
+    def _callback_dummy(value):
+
+        print(value)
 
         pass
 

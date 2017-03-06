@@ -22,9 +22,9 @@ class Collection:
         self.structs_hash = self._get_hash()
 
         # tasks
-        self.task_active = False
         self.task_queue = []
         self.task_steps = 0
+        self.task_current = 0
 
         self.prepare_catalogs()
         self.ui.setup_workspace()
@@ -53,7 +53,12 @@ class Collection:
 
         for file in files:
             structure = Structure(file, self.paths)
-            structure.set_callback(self)
+            structure.set_callbacks({
+                "assert_error": self.assert_error,
+                "update_progress": self.ui.set_current_progress,
+                "update_total": self.ui.set_total_progress,
+                "update_progress_text": self.ui.set_progress_text_current
+            })
             if structure.load():
                 self.structures[file.replace(".json", "")] = structure
                 self.ui.add_structure(structure.get_name())
@@ -66,13 +71,11 @@ class Collection:
 
         items = self.ui.structs.selectedItems()
 
-        if len(items) == 1:
-            self.structures[items[0].text()].validate()
-        elif len(items) > 1:
+        if len(items) > 0:
             result = []
             for item in items:
                 structure = self.structures[item.text()]
-                test = structure.validate_quietly()
+                test = structure.validate()
                 test["name"] = structure.get_name()
                 result.append(test)
 
@@ -87,16 +90,16 @@ class Collection:
     def convert_to_txt(self):
 
         items = self.ui.structs.selectedItems()
-        self.task_queue = []
-        self.task_steps = 0
+
+        self._reset_task()
 
         if len(items) > 0:
 
-            print("Start converting to TXT {} structures!".format(str(len(items))))
+            self.task_steps = len(items)
 
             # validate structures
             for item in items:
-                test_result = self.structures[item.text()].validate_quietly()
+                test_result = self.structures[item.text()].validate()
                 if not test_result["success"]:
                     error = "<p><span style='color: red;'>{}</span></p>".format(test_result["title"])
                     error += test_result["error_message"]
@@ -106,13 +109,10 @@ class Collection:
             # prepare task
             for item in items:
                 struct = self.structures[item.text()]
-                self.task_steps += struct.get_steps_count()
-                thread = threading.Thread(target=struct.to_txt)
-                thread.setDaemon(True)
-                self.task_queue.append(thread)
+                self.task_queue.append(struct.get_name())
 
             # show progress bar
-            self.ui.show_progress()
+            self.ui.show_progress("Converting to TXT...")
 
             # start task
             thread = threading.Thread(target=self._start_tasks)
@@ -120,23 +120,6 @@ class Collection:
             thread.start()
 
             return True
-
-        pass
-
-    def _start_tasks(self):
-
-        start_time = time.time()
-
-        for index, task in enumerate(self.task_queue):
-            print("Task #{} started!".format(index))
-            task.start()
-            while task.isAlive():
-                continue
-            print("Task #{} completed!".format(index))
-
-        working_time = math.floor(time.time() - start_time)
-        working_time = datetime.timedelta(seconds=working_time)
-        print("Converting complete by: {}".format(working_time))
 
         pass
 
@@ -168,6 +151,22 @@ class Collection:
         pass
 
     # Private Methods
+
+    def _start_tasks(self):
+
+        start_time = time.time()
+
+        for task in self.task_queue:
+            self.task_current += 1
+            total_text = "Structure: {} ... {}/{}".format(task, str(self.task_current), str(self.task_steps))
+            self.ui.set_progress_text_total(total_text)
+            self.structures[task].to_txt()
+
+        working_time = math.floor(time.time() - start_time)
+        working_time = datetime.timedelta(seconds=working_time)
+        print("Converting complete by: {}".format(working_time))
+
+        pass
 
     def _check_catalog(self, catalog):
 
@@ -288,12 +287,7 @@ class Collection:
     def _window_focus_event(self, event):
 
         if event is None:
-            return
-
-        if self.task_active:
-            return
-
-        print("RELOADING")
+            return False
 
         structs_hash = self._get_hash()
 
@@ -394,6 +388,15 @@ class Collection:
             os.startfile(path)
         else:
             self.ui.alert_error("Can't find catalog!<br>" + path)
+
+        pass
+
+    def _reset_task(self):
+
+        self.task_names = []
+        self.task_queue = []
+        self.task_steps = 0
+        self.task_current = 0
 
         pass
 

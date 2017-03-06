@@ -47,4 +47,11 @@ class File:
 
         pass
 
+    @staticmethod
+    def _callback_dummy(value):
+
+        print(value)
+
+        pass
+
     pass
