@@ -22,10 +22,10 @@ class Structure:
         self.txt_files = []
 
         self.callbacks = {
-            "assert_error": self._assert_error,
-            "update_progress": self._callback_dummy,
-            "update_total": self._callback_dummy,
-            "update_progress_text": self._callback_dummy
+            "alert_error": self._callback_dummy,
+            "current_progress": self._callback_dummy,
+            "total_progress": self._callback_dummy,
+            "current_progress_text": self._callback_dummy
         }
 
         self.total_steps = 0
@@ -41,17 +41,17 @@ class Structure:
 
     def set_callbacks(self, callbacks):
 
-        if "assert_error" in callbacks:
-            self.callbacks["assert_error"] = callbacks["assert_error"]
+        if "alert_error" in callbacks:
+            self.callbacks["alert_error"] = callbacks["alert_error"]
 
-        if "update_progress" in callbacks:
-            self.callbacks["update_progress"] = callbacks["update_progress"]
+        if "current_progress" in callbacks:
+            self.callbacks["current_progress"] = callbacks["current_progress"]
 
-        if "update_total" in callbacks:
-            self.callbacks["update_total"] = callbacks["update_total"]
+        if "total_progress" in callbacks:
+            self.callbacks["total_progress"] = callbacks["total_progress"]
 
-        if "update_progress_text" in callbacks:
-            self.callbacks["update_progress_text"] = callbacks["update_progress_text"]
+        if "current_progress_text" in callbacks:
+            self.callbacks["current_progress_text"] = callbacks["current_progress_text"]
 
         pass
 
@@ -215,21 +215,55 @@ class Structure:
         self.current_step = 0
 
         # reading DAT files
+        dat_data = {}
         for file in self.dat_files:
             if not file.read():
-                return False
+                return {
+                    "success": False,
+                    "error": "Can't read file!",
+                    "title": file.get_name() + " reading error!"
+                }
             result = file.parse()
             if not result["success"]:
-                self.callbacks["assert_error"](result["error"], file.get_name() + " reading error!")
-                break
+                return {
+                    "success": False,
+                    "error": result["error"],
+                    "title": file.get_name() + " reading error!"
+                }
+            else:
+                dat_data.update(result["data"])
+
+        # build TXT files
+        txt_data = {}
+        for file in self.txt_files:
+            needle_groups = file.get_needle_groups()
+            fields_map = {}
+            for group in needle_groups:
+                # dat fields map
+                struct = self._get_dat_group_structure(group)
+                fields_map[group] = self._get_structure_fields_map(struct)["titles"]
+
+            result = file.build(dat_data, fields_map)
+            if not result["success"]:
+                return {
+                    "success": False,
+                    "error": result["error"],
+                    "title": file.get_name() + " writing error!"
+                }
+            else:
+                txt_data[file.get_name()] = result["data"]
+
+        # writing files
+
+        return {"success": True}
 
         pass
 
     def step_completed(self):
 
         self.current_step += 1
-        self.callbacks["update_progress"](0)
-        self.callbacks["update_total"](self.current_step / (self.total_steps / 100))
+        self.callbacks["current_progress"](0)
+        self.callbacks["total_progress"](self.current_step / (self.total_steps / 100))
 
         pass
 
@@ -260,8 +294,8 @@ class Structure:
         # init object
         file_instance = DATFile(file["source_file"], file_path, file_data)
         file_instance.set_callbacks({
-            "update_progress": self.callbacks["update_progress"],
-            "update_progress_text": self.callbacks["update_progress_text"],
+            "current_progress": self.callbacks["current_progress"],
+            "current_progress_text": self.callbacks["current_progress_text"],
             "step_completed": self.step_completed
         })
         self.dat_files.append(file_instance)
@@ -286,7 +320,23 @@ class Structure:
 
         # init object
         file_instance = TXTFile(file["output_file"], file_path, file_data)
+        file_instance.set_callbacks({
+            "current_progress": self.callbacks["current_progress"],
+            "current_progress_text": self.callbacks["current_progress_text"],
+            "step_completed": self.step_completed
+        })
         self.txt_files.append(file_instance)
+
+        pass
+
+    def _get_dat_group_structure(self, name):
+
+        for dat_files in self.structure["dat_files"]:
+            for group in dat_files["groups"]:
+                if group["group_name"] == name:
+                    return self.structure["dat_structures"][group["structure"]]
+
+        return False
 
         pass
 
@@ -896,16 +946,9 @@ class Structure:
         pass
 
     @staticmethod
-    def _assert_error(message, title=""):
+    def _callback_dummy(*values):
 
-        print("Structure error: " + message + " | " + title)
-
-        pass
-
-    @staticmethod
-    def _callback_dummy(value):
-
-        print(value)
+        print("Structure Class: %s" % list(values))
 
         pass
 

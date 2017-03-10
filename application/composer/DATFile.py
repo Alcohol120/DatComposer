@@ -11,12 +11,8 @@ class DATFile(File):
         super().__init__(file_name, file_path)
 
         self.structure = structure
-
-        self.callbacks = {
-            "update_progress": self._callback_dummy,
-            "update_progress_text": self._callback_dummy,
-            "step_completed": self._callback_dummy
-        }
+        self.meta = {}
+        self.groups = {}
 
         pass
 
@@ -29,22 +25,7 @@ class DATFile(File):
 
         pass
 
-    def set_callbacks(self, callbacks):
-
-        if "update_progress" in callbacks:
-            self.callbacks["update_progress"] = callbacks["update_progress"]
-
-        if "update_progress_text" in callbacks:
-            self.callbacks["update_progress_text"] = callbacks["update_progress_text"]
-
-        if "step_completed" in callbacks:
-            self.callbacks["step_completed"] = callbacks["step_completed"]
-
-        pass
-
     def parse(self):
-
-        file_name = self.get_name()
 
         if self.source == "":
             return {
@@ -53,23 +34,26 @@ class DATFile(File):
             }
 
         offset = 0
-        meta_vars = {}
         groups_data = {}
 
         # parse file by groups
         for group in self.structure["groups"]:
-            status_text = "Reading file: {} [{}]".format(file_name, group["group_name"])
-            self.callbacks["update_progress_text"](status_text)
+
+            status_text = "Reading file: {} [{}]".format(self.get_name(), group["group_name"])
+            self.callbacks["current_progress_text"](status_text)
+
             try:
-                result = self._parse_group(group, meta_vars, offset)
+                result = self._parse_group(group, offset)
             except ValueError as error:
                 return {
                     "success": False,
                     "error": str(error)
                 }
+
             offset = result["offset"]
-            meta_vars = result["meta_vars"]
+            self.meta = result["meta_vars"]
             groups_data[group["group_name"]] = result["rows"]
+
             self.callbacks["step_completed"]()
 
         return {
@@ -79,43 +63,32 @@ class DATFile(File):
 
         pass
 
-    def _parse_group(self, group, meta, offset):
+    def reset(self):
 
-        meta_vars = meta
+        self.meta = {}
+        self.groups = {}
+
+        pass
+
+    # Private Methods
+
+    def _parse_group(self, group, offset):
+
+        meta_vars = self.meta.copy()
 
         # read header
         if "header" in group:
-            for field in group["header"]:
-                size = self._get_field_len(field)
-                if size == 0:
-                    error = "{}: Can't get length of '{}' field!".format(group["group_name"], field["title"])
-                    raise ValueError(error)
-                # read field
-                field_data = self.source[offset:(offset + size)]
-                field_data = self._unpack_bytes(field_data, field["type"])
-                if field_data is Exception:
-                    error = "{}: Can't read '{}' field!".format(group["group_name"], field["title"])
-                    raise ValueError(error)
-                meta_vars[field["title"]] = field_data
-                offset += size
+            data = self._parse_header(group, offset)
+            offset = data["offset"]
+            meta_vars.update(data["meta"])
 
         # get total rows
         total_rows = self._get_total_rows(group, meta_vars)
-        if total_rows < 1:
-            error = "{}: Wrong 'count' parameter!".format(group["group_name"])
-            raise ValueError(error)
+        if total_rows < 0:
+            raise ValueError("{}: Wrong 'count' parameter!".format(group["group_name"]))
 
         # progress
         percent = math.floor(total_rows / 100)
-        percent_step = 1
-        if total_rows < 500:
-            percent_step = 25
-        elif total_rows < 1000:
-            percent_step = 20
-        elif total_rows < 2000:
-            percent_step = 10
-        elif total_rows < 3000:
-            percent_step = 5
 
         # read group body
         count = 0
@@ -125,20 +98,18 @@ class DATFile(File):
             for field in group["structure"]["fields"]:
                 size = self._get_field_len(field, group["structure"]["titles"], cells)
                 if size == 0:
-                    error = "{}: Can't get length of '{}' field!".format(group["group_name"], field["title"])
-                    raise ValueError(error)
+                    raise ValueError("{}: Can't get length of '{}' field!".format(group["group_name"], field["title"]))
                 # read field
                 field_data = self.source[offset:(offset + size)]
                 field_data = self._unpack_bytes(field_data, field["type"])
                 if field_data is Exception:
-                    error = "{}: Can't read '{}' field!".format(group["group_name"], field["title"])
-                    raise ValueError(error)
+                    raise ValueError("{}: Can't read '{}' field!".format(group["group_name"], field["title"]))
                 cells.append(field_data)
                 offset += size
             rows.append(cells)
             count += 1
-            if count % (percent * percent_step) == 0:
-                self.callbacks["update_progress"](count / percent)
+            if count % percent == 0:
+                self.callbacks["current_progress"](count / percent)
 
         return {
             "rows": rows,
@@ -148,21 +119,44 @@ class DATFile(File):
 
         pass
 
+    def _parse_header(self, group, offset):
+
+        meta_vars = {}
+
+        for field in group["header"]:
+            size = self._get_field_len(field)
+            if size == 0:
+                error = "{}: Can't get length of '{}' header field!".format(group["group_name"], field["title"])
+                raise ValueError(error)
+            # read field
+            field_data = self.source[offset:(offset + size)]
+            field_data = self._unpack_bytes(field_data, field["type"])
+            if field_data is Exception:
+                error = "{}: Can't read '{}' header field!".format(group["group_name"], field["title"])
+                raise ValueError(error)
+            meta_vars[field["title"]] = field_data
+            offset += size
+
+        return {
+            "meta": meta_vars,
+            "offset": offset
+        }
+
+        pass
+
     @staticmethod
     def _get_total_rows(group, meta_vars):
 
-        total_rows = 0
+        total_rows = -1
         if type(group["count"]) is str:
             founded_vars = re.findall("\{(.*?)\}", group["count"])
             for var in founded_vars:
                 total_rows = group["count"].replace("{" + var + "}", str(meta_vars[var]))
             if re.search("^[0-9\-+ ]+$", total_rows) is None:
-                return 0
+                return -1
             total_rows = int(eval(total_rows))
         else:
             total_rows = int(group["count"])
-        if total_rows < 1:
-            return 0
 
         return total_rows
 

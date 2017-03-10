@@ -54,10 +54,10 @@ class Collection:
         for file in files:
             structure = Structure(file, self.paths)
             structure.set_callbacks({
-                "assert_error": self.assert_error,
-                "update_progress": self.ui.set_current_progress,
-                "update_total": self.ui.set_total_progress,
-                "update_progress_text": self.ui.set_progress_text_current
+                "alert_error": self.emit_alert_error,
+                "current_progress": self.emit_current_progress,
+                "total_progress": self.emit_total_progress,
+                "current_progress_text": self.emit_current_progress_text
             })
             if structure.load():
                 self.structures[file.replace(".json", "")] = structure
@@ -95,7 +95,7 @@ class Collection:
 
         if len(items) > 0:
 
-            self.task_steps = len(items)
+            self.task_steps = len(items) + 1
 
             # validate structures
             for item in items:
@@ -103,7 +103,7 @@ class Collection:
                 if not test_result["success"]:
                     error = "<p><span style='color: red;'>{}</span></p>".format(test_result["title"])
                     error += test_result["error_message"]
-                    self.assert_error(error, test_result["error_type"])
+                    self.ui.alert_error(error, test_result["error_type"])
                     return False
 
             # prepare task
@@ -112,7 +112,7 @@ class Collection:
                 self.task_queue.append(struct.get_name())
 
             # show progress bar
-            self.ui.show_progress("Converting to TXT...")
+            self.ui.signal_show_progress.emit("Converting to TXT...")
 
             # start task
             thread = threading.Thread(target=self._start_tasks)
@@ -120,24 +120,6 @@ class Collection:
             thread.start()
 
             return True
-
-        pass
-
-    def assert_error(self, message, title=""):
-
-        if title != "":
-            self.ui.alert_error(message, title)
-        else:
-            self.ui.alert_error(message)
-
-        pass
-
-    def assert_success(self, message, title=""):
-
-        if title != "":
-            self.ui.alert_success(message, title)
-        else:
-            self.ui.alert_success(message)
 
         pass
 
@@ -150,6 +132,33 @@ class Collection:
 
         pass
 
+    def emit_alert_error(self, message, title=""):
+
+        if title == "":
+            self.ui.signal_alert_error.emit(message)
+        else:
+            self.ui.signal_alert_error.emit(message, title)
+
+        pass
+
+    def emit_current_progress(self, value):
+
+        self.ui.signal_current_progress.emit(value)
+
+        pass
+
+    def emit_total_progress(self, value):
+
+        self.ui.signal_total_progress.emit(value)
+
+        pass
+
+    def emit_current_progress_text(self, value):
+
+        self.ui.signal_current_progress_text.emit(value)
+
+        pass
+
     # Private Methods
 
     def _start_tasks(self):
@@ -159,12 +168,20 @@ class Collection:
         for task in self.task_queue:
             self.task_current += 1
             total_text = "Structure: {} ... {}/{}".format(task, str(self.task_current), str(self.task_steps))
-            self.ui.set_progress_text_total(total_text)
-            self.structures[task].to_txt()
+            self.ui.signal_total_progress_text.emit(total_text)
+            result = self.structures[task].to_txt()
+            if not result["success"]:
+                self.ui.signal_hide_progress.emit()
+                self.ui.signal_alert_error.emit(result["error"], result["title"])
+                break
 
+        # completed
+        self.ui.signal_hide_progress.emit()
         working_time = math.floor(time.time() - start_time)
         working_time = datetime.timedelta(seconds=working_time)
-        print("Converting complete by: {}".format(working_time))
+        message = "{} structures converted to TXT!<br>". format(str(len(self.task_queue)))
+        message += "Completed by: {}".format(working_time)
+        self.ui.signal_alert_success.emit(message, "Success")
 
         pass
 
@@ -194,7 +211,7 @@ class Collection:
                 try:
                     os.makedirs(ROOT_PATH + "/" + path)
                 except PermissionError:
-                    self.assert_error("Can't create collection catalogs!", "Filesystem error!")
+                    self.ui.alert_error("Can't create collection catalogs!", "Filesystem error!")
 
         pass
 
@@ -300,6 +317,8 @@ class Collection:
     def _structure_selected_event(self):
 
         self.ui.clear_browser()
+        self.ui.to_dat_disable()
+        self.ui.to_txt_disable()
         self.ui.test_structure_disable()
 
         items = self.ui.structs.selectedItems()
@@ -317,9 +336,6 @@ class Collection:
         pass
 
     def _structure_selected_single(self, item):
-
-        self.ui.to_dat_disable()
-        self.ui.to_txt_disable()
 
         structure = self.structures[item.text()]
 

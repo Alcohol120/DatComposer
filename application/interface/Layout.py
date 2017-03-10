@@ -12,8 +12,8 @@ class Layout(UI):
         UI.app = QApplication(sys_argv)
 
         self._build_main_window()
+        self._create_progress_dialog()
 
-        # show the main window
         UI.window.show()
 
         pass
@@ -83,6 +83,37 @@ class Layout(UI):
         tab = QWidget()
         UI.tabs.addTab(tab, "Main")
         tab.deleteLater()
+
+        pass
+
+    def _create_progress_dialog(self):
+
+        dialog = QDialog(UI.window, QtCore.Qt.WindowSystemMenuHint | QtCore.Qt.WindowTitleHint)
+        dialog.setWindowModality(QtCore.Qt.WindowModal)
+        dialog.setWindowTitle("Executing...")
+        dialog.setFixedWidth(400)
+
+        layout = QVBoxLayout(dialog)
+
+        progress_current = QProgressBar()
+        progress_current.setValue(0)
+
+        progress_total = QProgressBar()
+        progress_total.setValue(0)
+
+        text_1 = QLabel("")
+        text_2 = QLabel("")
+
+        layout.addWidget(text_1, alignment=QtCore.Qt.AlignBaseline)
+        layout.addWidget(progress_current, alignment=QtCore.Qt.AlignBaseline)
+        layout.addWidget(text_2, alignment=QtCore.Qt.AlignBaseline)
+        layout.addWidget(progress_total, alignment=QtCore.Qt.AlignBaseline)
+
+        self.progress["window"] = dialog
+        self.progress["current"] = progress_current
+        self.progress["total"] = progress_total
+        self.progress["texts"]["current"] = text_1
+        self.progress["texts"]["total"] = text_2
 
         pass
 

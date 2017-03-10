@@ -9,6 +9,8 @@ class Workspace(UI):
 
     def __init__(self, collection_name):
 
+        super().__init__()
+
         self.name = collection_name
 
         self.composer_box = QGroupBox
@@ -18,12 +20,6 @@ class Workspace(UI):
         self.quick_nav = {}
         self.encoder = {}
         self.decoder = {}
-        self.progress = {
-            "window": QDialog,
-            "current": QProgressBar,
-            "total": QProgressBar,
-            "texts": {}
-        }
 
         pass
 
@@ -36,7 +32,6 @@ class Workspace(UI):
         self._create_browser()
         self._create_quick_nav()
         self._create_encoder_tabs()
-        self._create_progress_dialog()
 
         pass
 
@@ -183,42 +178,6 @@ class Workspace(UI):
             self.alert_success(html, "Structure validation success!")
         else:
             self.alert_error(html, "Structure validation failed!")
-
-        pass
-
-    def show_progress(self, title="Executing..."):
-
-        self.progress["current"].setValue(0)
-        self.progress["total"].setValue(0)
-        self.progress["texts"]["current"].setText("")
-        self.progress["texts"]["total"].setText("")
-        self.progress["window"].setWindowTitle(str(title))
-        self.progress["window"].show()
-        UI.app.processEvents()
-
-        pass
-
-    def set_progress_text_current(self, value):
-
-        self.progress["texts"]["current"].setText(value)
-
-        pass
-
-    def set_progress_text_total(self, value):
-
-        self.progress["texts"]["total"].setText(value)
-
-        pass
-
-    def set_current_progress(self, value):
-
-        self.progress["current"].setValue(value)
-
-        pass
-
-    def set_total_progress(self, value):
-
-        self.progress["total"].setValue(value)
 
         pass
 
@@ -436,37 +395,6 @@ class Workspace(UI):
             self.encoder = elements
         else:
             self.decoder = elements
-
-        pass
-
-    def _create_progress_dialog(self):
-
-        dialog = QDialog(UI.window, QtCore.Qt.WindowSystemMenuHint | QtCore.Qt.WindowTitleHint)
-        dialog.setWindowModality(QtCore.Qt.WindowModal)
-        dialog.setWindowTitle("Executing...")
-        dialog.setFixedWidth(400)
-
-        layout = QVBoxLayout(dialog)
-
-        progress_current = QProgressBar()
-        progress_current.setValue(0)
-
-        progress_total = QProgressBar()
-        progress_total.setValue(0)
-
-        text_1 = QLabel("")
-        text_2 = QLabel("")
-
-        layout.addWidget(text_1, alignment=QtCore.Qt.AlignBaseline)
-        layout.addWidget(progress_current, alignment=QtCore.Qt.AlignBaseline)
-        layout.addWidget(text_2, alignment=QtCore.Qt.AlignBaseline)
-        layout.addWidget(progress_total, alignment=QtCore.Qt.AlignBaseline)
-
-        self.progress["window"] = dialog
-        self.progress["current"] = progress_current
-        self.progress["total"] = progress_total
-        self.progress["texts"]["current"] = text_1
-        self.progress["texts"]["total"] = text_2
 
         pass
 
