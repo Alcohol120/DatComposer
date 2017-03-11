@@ -4,10 +4,11 @@ import os
 
 class File:
 
-    def __init__(self, file_name, file_path):
+    def __init__(self, file_name, file_path, paths):
 
         self.file_name = file_name
         self.file_path = file_path
+        self.paths = paths
 
         self.source = ""
 
@@ -22,6 +23,12 @@ class File:
     def get_name(self):
 
         return self.file_name
+
+        pass
+
+    def get_path(self):
+
+        return self.file_path
 
         pass
 
@@ -44,25 +51,6 @@ class File:
 
         if "step_completed" in callbacks:
             self.callbacks["step_completed"] = callbacks["step_completed"]
-
-        pass
-
-    def read(self):
-
-        try:
-            file = open(self.file_path, "rb")
-            data = file.read()
-            file.close()
-        except FileNotFoundError:
-            return False
-        except PermissionError:
-            return False
-        except ValueError:
-            return False
-
-        self.source = data
-
-        return True
 
         pass
 

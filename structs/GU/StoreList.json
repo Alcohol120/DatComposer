@@ -7,7 +7,7 @@
   "working_path": "StoreList",
   "dat_structures": {
     "SRV_StoreList_DAT": [
-      {"title": "m_dwIndex", "type": "u32"},
+      {"title": "m_dwIndex", "type": "u32", "value": "{count}"},
       {"title": "m_strCode", "type": "cstr"},
       {"title": "m_strBinding_DummyName", "type": "cstr"},
       {"title": "m_strStore_NPCcode", "type": "cstr"},
@@ -42,7 +42,7 @@
       }
     ],
     "SRV_StoreListSTR_DAT": [
-      {"title": "m_strIndex", "type": "u32"},
+      {"title": "m_strIndex", "type": "u32", "value": "{count}"},
       {"title": "s_strCode", "type": "cstr", "use": "m_strCode"},
       {
         "repeat": 11,
@@ -52,7 +52,7 @@
       }
     ],
     "CLI_Store_DAT": [
-      {"title": "Index", "type": "u32"},
+      {"title": "Index", "type": "u32", "value": "{count}"},
       {"title": "ID", "type": "x32"},
       {"title": "Race", "type": "u8"},
       {"title": "NPCTitle", "type": "cstr", "len": 32, "value": ""},
@@ -92,7 +92,7 @@
       }
     ],
     "CLI_NDStore_DAT": [
-      { "title": "Index", "type": "u32" },
+      { "title": "Index", "type": "u32", "value": "{count}" },
       { "title": "ShopName", "type": "cstr", "len": 32 },
       { "title": "NPCName", "type": "cstr", "len": 32 },
       { "title": "DescLength", "type": "u32", "use": "NPCDescription", "rule": "length" },
@@ -162,7 +162,6 @@
           ],
           "count": "{rows}",
           "count_override": "rows",
-          "index_override": "m_dwIndex",
           "structure": "SRV_StoreList_DAT"
         }
       ]
@@ -181,7 +180,6 @@
           ],
           "count": "{rows}",
           "count_override": "rows",
-          "index_override": "m_strIndex",
           "structure": "SRV_StoreListSTR_DAT"
         }
       ]
@@ -199,7 +197,6 @@
           ],
           "count": "{StoreBlocks}",
           "count_override": "StoreBlocks",
-          "index_override": "Index",
           "structure": "CLI_Store_DAT"
         }
       ]
@@ -216,7 +213,6 @@
           ],
           "count": "{rows}",
           "count_override": "rows",
-          "index_override": "Index",
           "structure": "CLI_NDStore_DAT"
         }
       ]

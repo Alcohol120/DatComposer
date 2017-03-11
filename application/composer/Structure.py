@@ -195,9 +195,9 @@ class Structure:
 
         pass
 
-    def get_total_steps(self):
+    def get_steps_to_txt(self):
 
-        total = len(self.structure["txt_files"])
+        total = len(self.structure["txt_files"]) * 2
         for file in self.structure["dat_files"]:
             total += len(file["groups"])
 
@@ -205,55 +205,100 @@ class Structure:
 
         pass
 
+    def get_steps_to_dat(self):
+
+        total = len(self.structure["txt_files"])
+        for file in self.structure["dat_files"]:
+            total += len(file["groups"]) * 2
+
+        return total
+
+        pass
+
     def to_dat(self):
+
+        self.total_steps = self.get_steps_to_dat()
+        self.current_step = 0
+
+        # reading TXT files
+        read_result = self._read_txt_files()
+        if not read_result["success"]:
+            for file in self.txt_files:
+                file.reset()
+            return read_result
+        else:
+            txt_data = read_result["txt_data"]
+
+        # build DAT files
+        build_result = self._build_dat_files(txt_data)
+        if not build_result["success"]:
+            build_result["title"] = "Composing error!"
+            for file in self.txt_files:
+                file.reset()
+            for file in self.dat_files:
+                file.reset()
+            return build_result
+
+        for file in self.txt_files:
+            file.reset()
+
+        # writing files
+        for file in self.dat_files:
+            res = file.save()
+            file.reset()
+            if not res["success"]:
+                res["title"] = file.get_name() + "Writing error!"
+                for dat in self.dat_files:
+                    dat.reset()
+                return res
+
+        return {"success": True}
 
         pass
 
     def to_txt(self):
 
-        self.total_steps = self.get_total_steps()
+        self.total_steps = self.get_steps_to_txt()
         self.current_step = 0
 
         # reading DAT files
-        dat_data = {}
-        for file in self.dat_files:
-            if not file.read():
-                return {
-                    "success": False,
-                    "error": "Can't read file!",
-                    "title": file.get_name() + " reading error!"
-                }
-            result = file.parse()
-            if not result["success"]:
-                return {
-                    "success": False,
-                    "error": result["error"],
-                    "title": file.get_name() + " reading error!"
-                }
-            else:
-                dat_data.update(result["data"])
+        read_result = self._read_dat_files()
+        if not read_result["success"]:
+            for file in self.dat_files:
+                file.reset()
+            return read_result
+        else:
+            dat_data = read_result["dat_data"]
 
         # build TXT files
-        txt_data = {}
-        for file in self.txt_files:
-            needle_groups = file.get_needle_groups()
-            fields_map = {}
-            for group in needle_groups:
-                # dat fields map
-                struct = self._get_dat_group_structure(group)
-                fields_map[group] = self._get_structure_fields_map(struct)["titles"]
-
-            result = file.build(dat_data, fields_map)
-            if not result["success"]:
-                return {
-                    "success": False,
-                    "error": result["error"],
-                    "title": file.get_name() + " writing error!"
-                }
-            else:
-                txt_data[file.get_name()] = result["data"]
+        build_result = self._build_txt_files(dat_data)
+        if not build_result["success"]:
+            build_result["title"] = "Composing error!"
+            for file in self.txt_files:
+                file.reset()
+            for file in self.dat_files:
+                file.reset()
+            return build_result
 
         # writing files
+        for file in self.dat_files:
+            res = file.save_meta()
+            file.reset()
+            if not res:
+                return {
+                    "success": False,
+                    "error": "Can't save meta data in header file!",
+                    "title": file.get_name() + " writing error!"
+                }
+        for file in self.txt_files:
+            res = file.save()
+            file.reset()
+            if not res:
+                return {
+                    "success": False,
+                    "error": "Can't save TXT file!<br>{}".format(file.get_path()),
+                    "title": file.get_name() + " writing error!"
+                }
 
         return {"success": True}
 
@@ -292,7 +337,7 @@ class Structure:
                 group["structure"] = False
 
         # init object
-        file_instance = DATFile(file["source_file"], file_path, file_data)
+        file_instance = DATFile(file["source_file"], file_path, self.paths, file_data)
         file_instance.set_callbacks({
             "current_progress": self.callbacks["current_progress"],
             "current_progress_text": self.callbacks["current_progress_text"],
@@ -319,13 +364,116 @@ class Structure:
             file_data["structure"] = False
 
         # init object
-        file_instance = TXTFile(file["output_file"], file_path, file_data)
+        file_instance = TXTFile(file["output_file"], file_path, self.paths, file_data)
         file_instance.set_callbacks({
             "current_progress": self.callbacks["current_progress"],
             "current_progress_text": self.callbacks["current_progress_text"],
             "step_completed": self.step_completed
         })
         self.txt_files.append(file_instance)
+
+        pass
+
+    def _read_txt_files(self):
+
+        txt_data = {}
+        for file in self.txt_files:
+            if not file.read():
+                return {
+                    "success": False,
+                    "error": "Can't read file!",
+                    "title": file.get_name() + " reading error!"
+                }
+            result = file.parse()
+            if not result["success"]:
+                return {
+                    "success": False,
+                    "error": result["error"],
+                    "title": file.get_name() + " reading error!"
+                }
+            else:
+                txt_data[file.get_name()] = result["data"]
+
+        return {
+            "success": True,
+            "txt_data": txt_data
+        }
+
+        pass
+
+    def _read_dat_files(self):
+
+        dat_data = {}
+        for file in self.dat_files:
+            if not file.read():
+                return {
+                    "success": False,
+                    "error": "Can't read file!",
+                    "title": file.get_name() + " reading error!"
+                }
+            result = file.parse()
+            if not result["success"]:
+                return {
+                    "success": False,
+                    "error": result["error"],
+                    "title": file.get_name() + " reading error!"
+                }
+            else:
+                dat_data.update(result["data"])
+
+        return {
+            "success": True,
+            "dat_data": dat_data
+        }
+
+        pass
+
+    def _build_txt_files(self, dat_data):
+
+        for file in self.txt_files:
+            needle_groups = file.get_needle_groups()
+            fields_map = {}
+            for group in needle_groups:
+                # dat fields map
+                struct = self._get_dat_group_structure(group)
+                fields_map[group] = self._get_structure_fields_map(struct)
+
+            file.set_dat_fields_map(fields_map)
+            result = file.build(dat_data)
+            if not result["success"]:
+                result["title"] = file.get_name() + " composing error!"
+                return result
+
+        return {"success": True}
+
+        pass
+
+    def _build_dat_files(self, txt_data):
+
+        # get groups map
+        groups_map = {}
+        for file in self.txt_files:
+            groups = file.get_needle_groups()
+            for group in groups:
+                groups_map[group] = {
+                    "file": file.get_name(),
+                    "map": file.get_fields_map()
+                }
+
+        # build DAT files
+        for file in self.dat_files:
+            if not file.load_meta():
+                return {
+                    "success": False,
+                    "error": "Can't load header file!",
+                    "title": file.get_name() + " composing error!"
+                }
+            result = file.build(txt_data, groups_map)
+            if not result["success"]:
+                result["title"] = file.get_name() + " composing error!"
+                return result
+
+        return {"success": True}
 
         pass
 
@@ -848,7 +996,9 @@ class Structure:
 
         data = {
             "titles": [],
-            "fields": []
+            "types": {},
+            "fields": [],
+            "from": []
         }
 
         for field in structure:
@@ -866,9 +1016,17 @@ class Structure:
 
                         data["fields"].append(row)
                         data["titles"].append(row["title"])
+                        if "type" in row:
+                            data["types"][row["title"]] = row["type"]
+                        if "from" in row:
+                            data["from"].append(row["from"] + " -> " + row["field"])
             else:
                 data["fields"].append(field)
                 data["titles"].append(field["title"])
+                if "type" in field:
+                    data["types"][field["title"]] = field["type"]
+                if "from" in field:
+                    data["from"].append(field["from"] + " -> " + field["field"])
 
         return data
 

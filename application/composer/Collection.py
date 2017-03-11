@@ -83,10 +83,6 @@ class Collection:
 
         pass
 
-    def convert_to_dat(self):
-
-        pass
-
     def convert_to_txt(self):
 
         items = self.ui.structs.selectedItems()
@@ -95,7 +91,7 @@ class Collection:
 
         if len(items) > 0:
 
-            self.task_steps = len(items) + 1
+            self.task_steps = len(items)
 
             # validate structures
             for item in items:
@@ -115,7 +111,43 @@ class Collection:
             self.ui.signal_show_progress.emit("Converting to TXT...")
 
             # start task
-            thread = threading.Thread(target=self._start_tasks)
+            thread = threading.Thread(target=self._start_tasks_to_txt)
+            thread.setDaemon(True)
+            thread.start()
+
+            return True
+
+        pass
+
+    def convert_to_dat(self):
+
+        items = self.ui.structs.selectedItems()
+
+        self._reset_task()
+
+        if len(items) > 0:
+
+            self.task_steps = len(items)
+
+            # validate structures
+            for item in items:
+                test_result = self.structures[item.text()].validate()
+                if not test_result["success"]:
+                    error = "<p><span style='color: red;'>{}</span></p>".format(test_result["title"])
+                    error += test_result["error_message"]
+                    self.ui.alert_error(error, test_result["error_type"])
+                    return False
+
+            # prepare task
+            for item in items:
+                struct = self.structures[item.text()]
+                self.task_queue.append(struct.get_name())
+
+            # show progress bar
+            self.ui.signal_show_progress.emit("Converting to DAT...")
+
+            # start task
+            thread = threading.Thread(target=self._start_tasks_to_dat)
             thread.setDaemon(True)
             thread.start()
 
@@ -161,7 +193,7 @@ class Collection:
 
     # Private Methods
 
-    def _start_tasks(self):
+    def _start_tasks_to_txt(self):
 
         start_time = time.time()
 
@@ -173,7 +205,7 @@ class Collection:
             if not result["success"]:
                 self.ui.signal_hide_progress.emit()
                 self.ui.signal_alert_error.emit(result["error"], result["title"])
-                break
+                return False
 
         # completed
         self.ui.signal_hide_progress.emit()
@@ -182,6 +214,34 @@ class Collection:
         message = "{} structures converted to TXT!<br>". format(str(len(self.task_queue)))
         message += "Completed by: {}".format(working_time)
         self.ui.signal_alert_success.emit(message, "Success")
+
+        return True
+
+        pass
+
+    def _start_tasks_to_dat(self):
+
+        start_time = time.time()
+
+        for task in self.task_queue:
+            self.task_current += 1
+            total_text = "Structure: {} ... {}/{}".format(task, str(self.task_current), str(self.task_steps))
+            self.ui.signal_total_progress_text.emit(total_text)
+            result = self.structures[task].to_dat()
+            if not result["success"]:
+                self.ui.signal_hide_progress.emit()
+                self.ui.signal_alert_error.emit(result["error"], result["title"])
+                return False
+
+        # completed
+        self.ui.signal_hide_progress.emit()
+        working_time = math.floor(time.time() - start_time)
+        working_time = datetime.timedelta(seconds=working_time)
+        message = "{} structures converted to DAT!<br>". format(str(len(self.task_queue)))
+        message += "Completed by: {}".format(working_time)
+        self.ui.signal_alert_success.emit(message, "Success")
+
+        return True
 
         pass
 

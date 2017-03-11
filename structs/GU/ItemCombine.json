@@ -7,7 +7,7 @@
   "working_path": "ItemCombine",
   "dat_structures": {
     "CombineTableSTRS": [
-      { "title": "m_dwIndex", "type": "u32" },
+      { "title": "m_dwIndex", "type": "u32", "value": "{count}" },
       { "title": "m_strCode", "type": "cstr", "len": 64 },
       { "title": "m_dwCommit", "type": "u32" },
       { "title": "m_strCivil", "type": "cstr", "len": 64 },
@@ -37,7 +37,7 @@
       }
     ],
     "LinkedStuffSTRS": [
-      { "title": "m_dwIndex", "type": "u32" },
+      { "title": "m_dwIndex", "type": "u32", "value": "{count}" },
       { "title": "m_strCode", "type": "cstr", "len": 64 },
       {
         "repeat": 100,
@@ -47,7 +47,7 @@
       }
     ],
     "LinkedResultSTRS": [
-      { "title": "m_dwIndex", "type": "u32" },
+      { "title": "m_dwIndex", "type": "u32", "value": "{count}" },
       { "title": "m_strCode", "type": "cstr", "len": 64 },
       {
         "repeat": 100,
@@ -57,7 +57,7 @@
       }
     ],
     "ItemCombineSTRS": [
-      { "title": "Index", "type": "u32" },
+      { "title": "Index", "type": "u32", "value": "{count}" },
       { "title": "Enabled", "type": "i32", "use": "m_bCombineExist" },
       { "title": "Amount", "type": "i32", "use": "m_dwCommit" },
       { "title": "BM", "type": "u8", "use": "m_strCivil", "rule": "race_bm" },
@@ -78,7 +78,7 @@
       { "title": "TotalItems", "type": "u32" }
     ],
     "CLI_LinkedStuffSTRS": [
-      { "title": "nCount", "type": "i32" },
+      { "title": "nCount", "type": "i32", "value": "{count}" },
       { "title": "TotalItems", "type": "i32" },
       {
         "repeat": 100,
@@ -189,7 +189,6 @@
           ],
           "count": "{rows}",
           "count_override": "rows",
-          "index_override": "m_dwIndex",
           "structure": "CombineTableSTRS"
         }
       ]
@@ -208,7 +207,6 @@
           ],
           "count": "{rows}",
           "count_override": "rows",
-          "index_override": "m_dwIndex",
           "structure": "CombineTableSTRS"
         }
       ]
@@ -227,7 +225,6 @@
           ],
           "count": "{rows}",
           "count_override": "rows",
-          "index_override": "m_dwIndex",
           "structure": "LinkedStuffSTRS"
         }
       ]
@@ -246,7 +243,6 @@
           ],
           "count": "{rows}",
           "count_override": "rows",
-          "index_override": "m_dwIndex",
           "structure": "LinkedResultSTRS"
         }
       ]
@@ -263,14 +259,12 @@
             { "title": "combinec", "type": "u32" }
           ],
           "count": 60374,
-          "index_override": "Index",
           "structure": "ItemCombineSTRS"
         },
         {
           "group_name": "ItemCombine2",
           "header": [],
           "count": "{combineb} - 60374",
-          "index_override": "Index",
           "structure": "ItemCombineSTRS"
         },
         {
@@ -281,7 +275,6 @@
           ],
           "count": "{linkedstuffb}",
           "count_override": "linkedstuffb",
-          "index_override": "nCount",
           "structure": "CLI_LinkedStuffSTRS"
         }
       ]
