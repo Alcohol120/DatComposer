@@ -1,6 +1,7 @@
 from application.config import *
 from application.interface.Workspace import Workspace
 from application.composer.Structure import Structure
+from application.composer.DATFile import DATFile
 import os
 import re
 import math
@@ -19,7 +20,11 @@ class Collection:
 
         self.ui = Workspace(data["name"])
         self.structures = {}
-        self.structs_hash = self._get_hash()
+        self.client_dat_files = {}
+        self.client_edf_files = {}
+        self.structs_hash = self._get_structs_hash()
+        self.client_dat_hash = self._get_dat_hash()
+        self.client_edf_hash = self._get_edf_hash()
 
         # tasks
         self.task_queue = []
@@ -30,6 +35,8 @@ class Collection:
         self.ui.setup_workspace()
 
         self.reload_structures()
+        self.reload_client_dat()
+        self.reload_client_edf()
 
         self._register_events()
 
@@ -46,9 +53,6 @@ class Collection:
 
         self.ui.clear_structs_list()
 
-        if not self._check_catalog("structs"):
-            return []
-
         files = self._get_structure_files()
 
         for file in files:
@@ -64,6 +68,28 @@ class Collection:
                 self.ui.add_structure(structure.get_name())
             else:
                 del structure
+
+        pass
+
+    def reload_client_dat(self):
+
+        self.ui.clear_client_dat()
+        files = self._get_client_files("dat")
+
+        for file in files:
+            self.client_dat_files[file] = DATFile(file, self.paths["cli_dat"] + "/" + file, self.paths)
+            self.ui.add_client_dat(file)
+
+        pass
+
+    def reload_client_edf(self):
+
+        self.ui.clear_client_edf()
+        files = self._get_client_files("edf")
+
+        for file in files:
+            self.client_edf_files[file] = DATFile(file, self.paths["cli_dat"] + "/" + file, self.paths)
+            self.ui.add_client_edf(file)
 
         pass
 
@@ -297,10 +323,52 @@ class Collection:
 
         pass
 
-    def _get_hash(self):
+    def _get_client_files(self, file_type="dat"):
+
+        if file_type != "dat" and file_type != "edf":
+            return []
+
+        if not self._check_catalog("cli_" + file_type):
+            return []
+
+        path = ROOT_PATH + "/" + self.paths["cli_" + file_type]
+
+        def list_catalog(catalog=""):
+
+            scan_in = path
+            if catalog != "":
+                scan_in += "/" + catalog
+
+            items = os.listdir(scan_in)
+
+            sub = []
+            files = []
+
+            for item in items:
+                if os.path.isfile(scan_in + "/" + item):
+                    if re.search(FILE_EXT_RE(file_type), item) is None:
+                        continue
+                    file = catalog + "/" + item
+                    files.append(file.strip("/"))
+                else:
+                    sub.append(item)
+
+            for sub_catalog in sub:
+                catalog += "/" + sub_catalog
+                files.extend(list_catalog(catalog.strip("/")))
+
+            return files
+
+            pass
+
+        return list_catalog()
+
+        pass
+
+    def _get_structs_hash(self):
 
         if not self._check_catalog("structs"):
-            return []
+            return ""
 
         structs_path = ROOT_PATH + "/" + self.paths["structs"]
 
@@ -312,7 +380,57 @@ class Collection:
             times += str(os.path.getmtime(structs_path + "/" + file))
 
         if times == "":
-            return False
+            return ""
+
+        times = times.encode("utf-8")
+        times_hash = hashlib.md5()
+        times_hash.update(times)
+
+        return times_hash.hexdigest()
+
+        pass
+
+    def _get_dat_hash(self):
+
+        if not self._check_catalog("cli_dat"):
+            return ""
+
+        dat_path = ROOT_PATH + "/" + self.paths["cli_dat"]
+
+        files = self._get_client_files("dat")
+
+        times = ""
+
+        for file in files:
+            times += str(os.path.getmtime(dat_path + "/" + file))
+
+        if times == "":
+            return ""
+
+        times = times.encode("utf-8")
+        times_hash = hashlib.md5()
+        times_hash.update(times)
+
+        return times_hash.hexdigest()
+
+        pass
+
+    def _get_edf_hash(self):
+
+        if not self._check_catalog("cli_edf"):
+            return ""
+
+        edf_path = ROOT_PATH + "/" + self.paths["cli_edf"]
+
+        files = self._get_client_files("edf")
+
+        times = ""
+
+        for file in files:
+            times += str(os.path.getmtime(edf_path + "/" + file))
+
+        if times == "":
+            return ""
 
         times = times.encode("utf-8")
         times_hash = hashlib.md5()
@@ -366,11 +484,22 @@ class Collection:
         if event is None:
             return False
 
-        structs_hash = self._get_hash()
+        # reload structures
+        structs_hash = self._get_structs_hash()
 
         if structs_hash != self.structs_hash:
             self.structs_hash = structs_hash
             self.reload_structures()
+
+        # reload client files
+        client_dat_hash = self._get_dat_hash()
+        client_edf_hash = self._get_edf_hash()
+        if client_dat_hash != self.client_dat_hash:
+            self.client_dat_hash = client_dat_hash
+            self.reload_client_dat()
+        if client_edf_hash != self.client_edf_hash:
+            self.client_edf_hash = client_edf_hash
+            self.reload_client_edf()
 
         pass
 

@@ -65,6 +65,30 @@ class Workspace(UI):
 
         pass
 
+    def clear_client_dat(self):
+
+        self.encoder["files"].clear()
+
+        pass
+
+    def clear_client_edf(self):
+
+        self.decoder["files"].clear()
+
+        pass
+
+    def add_client_dat(self, file):
+
+        self.encoder["files"].addItem(file)
+
+        pass
+
+    def add_client_edf(self, file):
+
+        self.decoder["files"].addItem(file)
+
+        pass
+
     def to_dat_enable(self):
 
         self.controls["to_dat"].setEnabled(1)

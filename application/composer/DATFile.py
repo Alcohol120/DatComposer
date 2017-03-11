@@ -9,7 +9,7 @@ from struct import pack, unpack
 
 class DATFile(File):
 
-    def __init__(self, file_name, file_path, paths, structure):
+    def __init__(self, file_name, file_path, paths, structure=dict):
 
         super().__init__(file_name, file_path, paths)
 
@@ -148,7 +148,13 @@ class DATFile(File):
                             value = str(txt_file[count][cell])
 
                     if "rule" in field:
-                        value = getattr(rules, field["rule"])(value)
+                        try:
+                            value = getattr(rules, field["rule"])(value)
+                        except Exception as e:
+                            return {
+                                "success": False,
+                                "error": str(e)
+                            }
 
                     if field["type"] == "cstr":
                         if "len" not in field:
