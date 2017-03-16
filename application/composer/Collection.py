@@ -2,6 +2,7 @@ from application.config import *
 from application.interface.Workspace import Workspace
 from application.composer.Structure import Structure
 from application.composer.DATFile import DATFile
+from application.composer.EDFFile import EDFFile
 import os
 import re
 import math
@@ -19,6 +20,7 @@ class Collection:
         self.paths = data["paths"]
 
         self.ui = Workspace(data["name"])
+
         self.structures = {}
         self.client_dat_files = {}
         self.client_edf_files = {}
@@ -27,6 +29,7 @@ class Collection:
         self.client_edf_hash = self._get_edf_hash()
 
         # tasks
+        self.task_type = 0
         self.task_queue = []
         self.task_steps = 0
         self.task_current = 0
@@ -77,7 +80,11 @@ class Collection:
         files = self._get_client_files("dat")
 
         for file in files:
-            self.client_dat_files[file] = DATFile(file, self.paths["cli_dat"] + "/" + file, self.paths)
+            file_path = ROOT_PATH + "/" + self.paths["cli_dat"] + "/" + file
+            self.client_dat_files[file] = DATFile(file, file_path, self.paths)
+            self.client_dat_files[file].set_callbacks({
+                "current_progress": self.emit_current_progress
+            })
             self.ui.add_client_dat(file)
 
         pass
@@ -88,7 +95,11 @@ class Collection:
         files = self._get_client_files("edf")
 
         for file in files:
-            self.client_edf_files[file] = DATFile(file, self.paths["cli_dat"] + "/" + file, self.paths)
+            file_path = ROOT_PATH + "/" + self.paths["cli_edf"] + "/" + file
+            self.client_edf_files[file] = EDFFile(file, file_path, self.paths)
+            self.client_edf_files[file].set_callbacks({
+                "current_progress": self.emit_current_progress
+            })
             self.ui.add_client_edf(file)
 
         pass
@@ -117,6 +128,7 @@ class Collection:
 
         if len(items) > 0:
 
+            self.task_type = 1
             self.task_steps = len(items)
 
             # validate structures
@@ -141,7 +153,7 @@ class Collection:
             thread.setDaemon(True)
             thread.start()
 
-            return True
+        return True
 
         pass
 
@@ -153,6 +165,7 @@ class Collection:
 
         if len(items) > 0:
 
+            self.task_type = 1
             self.task_steps = len(items)
 
             # validate structures
@@ -177,7 +190,71 @@ class Collection:
             thread.setDaemon(True)
             thread.start()
 
-            return True
+        return True
+
+        pass
+
+    def client_encode_event(self):
+
+        items = self.ui.encoder["files"].selectedItems()
+
+        self._reset_task()
+
+        if len(items) > 0:
+
+            self.task_type = 2
+            self.task_steps = len(items)
+
+            # prepare task
+            for item in items:
+                self.task_queue.append(item.text())
+
+            # show progress bar
+            self.ui.signal_show_progress.emit("EDF Encoding...")
+
+            # start task
+            thread = threading.Thread(target=self._start_task_encode)
+            thread.setDaemon(True)
+            thread.start()
+
+        pass
+
+    def client_decode_event(self):
+
+        items = self.ui.decoder["files"].selectedItems()
+
+        self._reset_task()
+
+        if len(items) > 0:
+
+            self.task_type = 3
+            self.task_steps = len(items)
+
+            # prepare task
+            for item in items:
+                self.task_queue.append(item.text())
+
+            # show progress bar
+            self.ui.signal_show_progress.emit("EDF Decoding...")
+
+            # start task
+            thread = threading.Thread(target=self._start_task_decode)
+            thread.setDaemon(True)
+            thread.start()
+
+        pass
+
+    def cancel_current_task(self):
+
+        for task in self.task_queue:
+            if self.task_type == 1:
+                self.structures[task].cancel_task()
+            elif self.task_type == 2:
+                self.client_dat_files[task].cancel_task()
+            elif self.task_type == 3:
+                self.client_edf_files[task].cancel_task()
+            else:
+                break
 
         pass
 
@@ -248,12 +325,13 @@ class Collection:
     def _start_tasks_to_dat(self):
 
         start_time = time.time()
+        to_edf_checked = self.ui.to_edf_checked()
 
         for task in self.task_queue:
             self.task_current += 1
             total_text = "Structure: {} ... {}/{}".format(task, str(self.task_current), str(self.task_steps))
             self.ui.signal_total_progress_text.emit(total_text)
-            result = self.structures[task].to_dat()
+            result = self.structures[task].to_dat(to_edf_checked)
             if not result["success"]:
                 self.ui.signal_hide_progress.emit()
                 self.ui.signal_alert_error.emit(result["error"], result["title"])
@@ -264,6 +342,100 @@ class Collection:
         working_time = math.floor(time.time() - start_time)
         working_time = datetime.timedelta(seconds=working_time)
         message = "{} structures converted to DAT!<br>". format(str(len(self.task_queue)))
+        message += "Completed by: {}".format(working_time)
+        self.ui.signal_alert_success.emit(message, "Success")
+
+        return True
+
+        pass
+
+    def _start_task_encode(self):
+
+        start_time = time.time()
+
+        self.ui.signal_total_progress_text.emit("Encoding...")
+
+        for task in self.task_queue:
+            self.task_current += 1
+            self.ui.signal_current_progress_text.emit("{}...".format(task))
+
+            dat_file = self.client_dat_files[task]
+            result = dat_file.encode()
+            dat_file.reset()
+            if not result:
+                self.ui.signal_hide_progress.emit()
+                self.ui.signal_alert_error.emit("Can't encode file!<br>{}".format(
+                    dat_file.get_full_path()),
+                    "Encoding error!"
+                )
+                return False
+
+            edf_name = task.replace(".dat", ".edf")
+            if edf_name not in self.client_edf_files:
+                edf_file = self._init_edf_file(edf_name)
+            else:
+                edf_file = self.client_edf_files[edf_name]
+            if not edf_file.write(result):
+                self.ui.signal_hide_progress.emit()
+                self.ui.signal_alert_error.emit("Can't save encoded file!<br>{}".format(
+                    edf_file.get_full_path()),
+                    "Encoding error!"
+                )
+                return False
+            self.ui.signal_total_progress.emit(self.task_current / (self.task_steps / 100))
+
+        # completed
+        self.ui.signal_hide_progress.emit()
+        working_time = math.floor(time.time() - start_time)
+        working_time = datetime.timedelta(seconds=working_time)
+        message = "{} files encoded!<br>".format(str(len(self.task_queue)))
+        message += "Completed by: {}".format(working_time)
+        self.ui.signal_alert_success.emit(message, "Success")
+
+        return True
+
+        pass
+
+    def _start_task_decode(self):
+
+        start_time = time.time()
+
+        self.ui.signal_total_progress_text.emit("Decoding...")
+
+        for task in self.task_queue:
+            self.task_current += 1
+            self.ui.signal_current_progress_text.emit("{}...".format(task))
+
+            edf_file = self.client_edf_files[task]
+            result = edf_file.decode()
+            edf_file.reset()
+            if not result:
+                self.ui.signal_hide_progress.emit()
+                self.ui.signal_alert_error.emit("Can't encode file!<br>{}".format(
+                    edf_file.get_full_path()),
+                    "Encoding error!"
+                )
+                return False
+
+            dat_name = task.replace(".edf", ".dat")
+            if dat_name not in self.client_dat_files:
+                dat_file = self._init_dat_file(dat_name)
+            else:
+                dat_file = self.client_dat_files[dat_name]
+            if not dat_file.write(result):
+                self.ui.signal_hide_progress.emit()
+                self.ui.signal_alert_error.emit("Can't save decoded file!<br>{}".format(
+                    dat_file.get_full_path()),
+                    "Encoding error!"
+                )
+                return False
+            self.ui.signal_total_progress.emit(self.task_current / (self.task_steps / 100))
+
+        # completed
+        self.ui.signal_hide_progress.emit()
+        working_time = math.floor(time.time() - start_time)
+        working_time = datetime.timedelta(seconds=working_time)
+        message = "{} files decoded!<br>".format(str(len(self.task_queue)))
         message += "Completed by: {}".format(working_time)
         self.ui.signal_alert_success.emit(message, "Success")
 
@@ -453,6 +625,9 @@ class Collection:
         # convert events
         self.ui.controls["to_dat"].clicked.connect(self.convert_to_dat)
         self.ui.controls["to_txt"].clicked.connect(self.convert_to_txt)
+        # encoder/decoder events
+        self.ui.encoder["submit"].clicked.connect(self.client_encode_event)
+        self.ui.decoder["submit"].clicked.connect(self.client_decode_event)
 
         pass
 
@@ -483,6 +658,8 @@ class Collection:
 
         if event is None:
             return False
+
+        self._structure_selected_event()
 
         # reload structures
         structs_hash = self._get_structs_hash()
@@ -598,10 +775,36 @@ class Collection:
 
     def _reset_task(self):
 
-        self.task_names = []
+        self.task_type = 0
         self.task_queue = []
         self.task_steps = 0
         self.task_current = 0
+
+        pass
+
+    def _init_dat_file(self, file_name):
+
+        file_path = ROOT_PATH + "/" + self.paths["cli_dat"] + "/" + file_name
+        file_instance = DATFile(file_name, file_path, self.paths)
+        file_instance.set_callbacks({
+            "current_progress": self.emit_current_progress
+        })
+        self.client_dat_files[file_name] = file_instance
+
+        return file_instance
+
+        pass
+
+    def _init_edf_file(self, file_name):
+
+        file_path = ROOT_PATH + "/" + self.paths["cli_edf"] + "/" + file_name
+        file_instance = EDFFile(file_name, file_path, self.paths)
+        file_instance.set_callbacks({
+            "current_progress": self.emit_current_progress
+        })
+        self.client_edf_files[file_name] = file_instance
+
+        return file_instance
 
         pass
 

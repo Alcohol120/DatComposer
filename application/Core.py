@@ -121,11 +121,16 @@ class Core:
 
     def _register_events(self):
 
-        self.layout.menu_bar_items["File"]["Quit"].triggered.connect(sys.exit)
         self.layout.menu_bar_items["File"]["Convert to TXT"].triggered.connect(self._convert_to_txt_event)
         self.layout.menu_bar_items["File"]["Convert to DAT"].triggered.connect(self._convert_to_dat_event)
         self.layout.menu_bar_items["File"]["Test Structure"].triggered.connect(self._validate_structure_event)
+        self.layout.menu_bar_items["File"]["Quit"].triggered.connect(sys.exit)
+
+        self.layout.menu_bar_items["Help"]["About"].triggered.connect(self.layout.show_about_modal)
+
         self.layout.tabs.currentChanged.connect(self._tab_changed_event)
+
+        self.layout.progress["cancel"].clicked.connect(self._cancel_task_event)
 
         pass
 
@@ -150,6 +155,14 @@ class Core:
         active_collection = self.layout.tabs.currentIndex()
 
         self.collections[active_collection].validate_selected_structures()
+
+        pass
+
+    def _cancel_task_event(self):
+
+        active_collection = self.layout.tabs.currentIndex()
+
+        self.collections[active_collection].cancel_current_task()
 
         pass
 

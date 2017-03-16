@@ -3,20 +3,10 @@
     "name": "GU",
     "paths": {
       "structs": "structs/GU",
-      "txt": "sources/GU",
-      "srv_dat": "compiled/GU/server",
-      "cli_dat": "compiled/GU/client/dat",
-      "cli_edf": "compiled/GU/client/edf"
-    }
-  },
-  {
-    "name": "BSB",
-    "paths": {
-      "structs": "structs/BSB",
-      "txt": "sources/BSB",
-      "srv_dat": "compiled/BSB/server",
-      "cli_dat": "compiled/BSB/client/dat",
-      "cli_edf": "compiled/BSB/client/edf"
+      "txt": "txt_files/GU",
+      "srv_dat": "dat_files/GU/server",
+      "cli_dat": "dat_files/GU/client/dat",
+      "cli_edf": "dat_files/GU/client/edf"
     }
   }
 ]

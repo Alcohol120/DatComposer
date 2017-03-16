@@ -16,7 +16,11 @@ class UI(QtCore.QObject):
         "window": QDialog,
         "current": QProgressBar,
         "total": QProgressBar,
-        "texts": {}
+        "texts": {},
+        "cancel": QPushButton
+    }
+    dialogs = {
+        "about": QDialog
     }
 
     # signals
@@ -119,6 +123,18 @@ class UI(QtCore.QObject):
     def set_total_progress(self, value):
 
         self.progress["total"].setValue(value)
+
+        pass
+
+    def show_about_modal(self):
+
+        self.dialogs["about"].show()
+
+        pass
+
+    def hide_about_modal(self):
+
+        self.dialogs["about"].hide()
 
         pass
 

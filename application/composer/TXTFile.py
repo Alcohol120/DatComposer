@@ -1,4 +1,3 @@
-from application.config import *
 from .File import File
 import math
 
@@ -9,10 +8,15 @@ class TXTFile(File):
 
         super().__init__(file_name, file_path, paths)
 
+        self.read_mode = "r"
+        self.write_mode = "w"
+
+        self.source = ""
+        self.output = ""
+
         self.structure = structure
 
         self.dat_fields_map = {}
-        self.txt_data = []
 
         pass
 
@@ -62,6 +66,12 @@ class TXTFile(File):
         percent = math.floor(total_rows / 100)
         count = 0
         for row in rows:
+            if self.canceled:
+                self.canceled = False
+                return {
+                    "success": False,
+                    "error": "Operation canceled by user!"
+                }
             if row == "":
                 continue
             cells = row.split("\t")
@@ -81,113 +91,60 @@ class TXTFile(File):
 
     def build(self, dat_data):
 
-        status_text = "Composing file: {}".format(self.get_name())
+        status_text = "Writing file: {}".format(self.get_name())
         self.callbacks["current_progress_text"](status_text)
 
         groups = self.get_needle_groups()
-        total_rows = -1
-        for group in groups:
-            if group not in dat_data:
-                return {
-                    "success": False,
-                    "error": "Insufficient data! Group '{}' is missing!".format(group)
-                }
-            if total_rows == -1:
-                total_rows = len(dat_data[group])
-            elif len(dat_data[group]) != total_rows:
-                return {
-                    "success": False,
-                    "error": "Error composing TXT file! Groups with different rows count given!"
-                }
-        if total_rows < 0:
-            return {
-                "success": False,
-                "error": "No data to writing!"
-            }
+        rows = self._get_total_rows(groups, dat_data)
+        if not rows["success"]:
+            return rows
+        else:
+            total_rows = rows["total_rows"]
 
         # progress
         percent = math.floor(total_rows / 100)
 
+        rows = []
+
+        # header
+        header = self._build_header()
+        for cells in header:
+            row = "\t".join(cells)
+            rows.append(row)
+
         # building
-        result_data = []
         count = 0
         while count < total_rows:
             cells = []
             for field in self.structure["structure"]["fields"]:
+                if self.canceled:
+                    self.canceled = False
+                    return {
+                        "success": False,
+                        "error": "Operation canceled by user!"
+                    }
                 group = self.dat_fields_map[field["from"]]
                 field_index = group["titles"].index(field["field"])
                 cells.append(str(dat_data[field["from"]][count][field_index]))
-            result_data.append(cells)
+            rows.append("\t".join(cells))
 
             count += 1
             if count % percent == 0:
                 self.callbacks["current_progress"](count / percent)
 
-        self.txt_data = result_data
-
+        self.output = "\n".join(rows)
         self.callbacks["step_completed"]()
 
         return {"success": True}
 
         pass
 
-    def save(self):
-
-        status_text = "Writing file: {}".format(self.get_name())
-        self.callbacks["current_progress_text"](status_text)
-
-        data = []
-
-        header = self._build_header()
-        for cells in header:
-            row = "\t".join(cells)
-            data.append(row)
-
-        total_rows = len(self.txt_data)
-        percent = math.floor(total_rows / 100)
-        count = 0
-        for cells in self.txt_data:
-            row = "\t".join(cells)
-            data.append(row)
-            count += 1
-            if count % percent == 0:
-                self.callbacks["current_progress"](count / percent)
-
-        data = "\n".join(data)
-
-        if not self._write(data):
-            return False
-
-        self.callbacks["step_completed"]()
-
-        return True
-
-        pass
-
     def reset(self):
 
+        self.canceled = False
         self.source = ""
-        self.txt_data = []
+        self.output = ""
         self.dat_fields_map = {}
-
-        pass
-
-    def read(self):
-
-        try:
-            file = open(self.file_path, "r")
-            data = file.read()
-            file.close()
-        except FileNotFoundError:
-            return False
-        except PermissionError:
-            return False
-        except ValueError:
-            return False
-
-        self.source = data
-
-        return True
 
         pass
 
@@ -207,22 +164,33 @@ class TXTFile(File):
 
         pass
 
-    def _write(self, data):
+    @staticmethod
+    def _get_total_rows(groups, dat_data):
 
-        path = ROOT_PATH + "/" + self.paths["txt"] + "/" + self.structure["catalog_name"]
-        if not os.path.isdir(path):
-            os.makedirs(path)
-
-        try:
-            file = open(path + "/" + self.file_name, "w")
-            file.write(data)
-            file.close()
-        except PermissionError:
-            return False
-        except FileNotFoundError:
-            return False
-
-        return True
+        total_rows = -1
+        for group in groups:
+            if group not in dat_data:
+                return {
+                    "success": False,
+                    "error": "Insufficient data! Group '{}' is missing!".format(group)
+                }
+            if total_rows == -1:
+                total_rows = len(dat_data[group])
+            elif len(dat_data[group]) != total_rows:
+                return {
+                    "success": False,
+                    "error": "Error composing TXT file! Groups with different rows count given!"
+                }
+        if total_rows < 0:
+            return {
+                "success": False,
+                "error": "No data to writing!"
+            }
+        else:
+            return {
+                "success": True,
+                "total_rows": total_rows
+            }
 
         pass
 

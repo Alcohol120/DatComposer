@@ -1,10 +1,5 @@
 {
-  "structure_info": {
-    "version": "1.0",
-    "author": "Alcohol120%",
-    "description": "This structure can't add rows to ItemCombine.edf!"
-  },
-  "working_path": "ItemCombine",
+  "note": "This structure cannot change rows count in ItemCombine.edf file!<br>You must change rows count for ItemCombine.edf manually!",
   "dat_structures": {
     "CombineTableSTRS": [
       { "title": "m_dwIndex", "type": "u32", "value": "{count}" },

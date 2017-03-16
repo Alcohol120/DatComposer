@@ -1,2 +1,2 @@
-APP_NAME = "DatComposer"
+APP_NAME = "DATComposer"
 APP_VERSION = "1.0"

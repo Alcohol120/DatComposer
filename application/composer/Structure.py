@@ -1,6 +1,7 @@
 from application.config import *
 from application.composer.Rules import rules
 from application.composer.DATFile import DATFile
+from application.composer.EDFFile import EDFFile
 from application.composer.TXTFile import TXTFile
 import re
 import json
@@ -61,26 +62,22 @@ class Structure:
         if not self._read_structure_file():
             return False
 
-        # check general structure blocks
-        try:
-            self._check_required_blocks()
-        except ValueError:
-            return False
-
         # init file objects
-        for file in self.structure["dat_files"]:
-            # check required parameters
-            if "side" not in file or (file["side"] != "server" and file["side"] != "client"):
-                continue
-            if "source_file" not in file or re.search(FILE_PATH_EXT_RE("dat"), file["source_file"]) is None:
-                continue
-            self._init_dat_file(file)
+        if "dat_files" in self.structure and type(self.structure["dat_files"]) is list:
+            for file in self.structure["dat_files"]:
+                # check required parameters
+                if "side" not in file or (file["side"] != "server" and file["side"] != "client"):
+                    continue
+                if "source_file" not in file or re.search(FILE_PATH_EXT_RE("dat"), file["source_file"]) is None:
+                    continue
+                self._init_dat_file(file)
 
-        for file in self.structure["txt_files"]:
-            # check required parameters
-            if "output_file" not in file or re.search(FILE_PATH_EXT_RE("txt"), file["output_file"]) is None:
-                continue
-            self._init_txt_file(file)
+        if "txt_files" in self.structure and type(self.structure["txt_files"]) is list:
+            for file in self.structure["txt_files"]:
+                # check required parameters
+                if "output_file" not in file or re.search(FILE_PATH_EXT_RE("txt"), file["output_file"]) is None:
+                    continue
+                self._init_txt_file(file)
 
         return True
 
@@ -91,6 +88,7 @@ class Structure:
         if not self.structure:
             return {
                 "success": False,
+                "title": self.name,
                 "error_type": "Runtime error!",
                 "error_message": "Cannot find structure data!"
             }
@@ -142,6 +140,9 @@ class Structure:
 
     def ready_to_txt(self):
 
+        if len(self.dat_files) < 1:
+            return False
+
         for file in self.dat_files:
             if not file.is_exists():
                 return False
@@ -151,6 +152,9 @@ class Structure:
         pass
 
     def ready_to_dat(self):
+
+        if len(self.txt_files) < 1:
+            return False
 
         for file in self.txt_files:
             if not file.is_exists():
@@ -165,14 +169,22 @@ class Structure:
         data = {
             "title": self.name,
             "note": "",
-            "dat_count": len(self.structure["dat_files"]),
-            "txt_count": len(self.structure["txt_files"]),
+            "dat_count": 0,
+            "txt_count": 0,
             "dat_files": {
                 "server": [],
                 "client": []
             },
             "txt_files": []
         }
+
+        try:
+            self._check_required_blocks()
+        except ValueError:
+            return data
+
+        data["dat_count"] = len(self.structure["dat_files"])
+        data["txt_count"] = len(self.structure["txt_files"])
 
         if "note" in self.structure and type(self.structure["note"]) is str:
             data["note"] = self.structure["note"]
@@ -195,9 +207,9 @@ class Structure:
 
         pass
 
-    def get_steps_to_txt(self):
+    def get_total_steps(self):
 
-        total = len(self.structure["txt_files"]) * 2
+        total = len(self.structure["txt_files"])
         for file in self.structure["dat_files"]:
             total += len(file["groups"])
 
@@ -205,26 +217,38 @@ class Structure:
 
         pass
 
-    def get_steps_to_dat(self):
+    def get_client_files_count(self):
 
-        total = len(self.structure["txt_files"])
-        for file in self.structure["dat_files"]:
-            total += len(file["groups"]) * 2
+        count = 0
+        for file in self.dat_files:
+            if file.get_side() == "client":
+                count += 1
 
-        return total
+        return count
 
         pass
 
-    def to_dat(self):
+    def cancel_task(self):
 
-        self.total_steps = self.get_steps_to_dat()
+        for file in self.dat_files:
+            file.cancel_task()
+
+        for file in self.txt_files:
+            file.cancel_task()
+
+        pass
+
+    def to_dat(self, to_edf=False):
+
+        self.total_steps = self.get_total_steps()
+        if to_edf:
+            self.total_steps += self.get_client_files_count()
         self.current_step = 0
 
         # reading TXT files
         read_result = self._read_txt_files()
         if not read_result["success"]:
-            for file in self.txt_files:
-                file.reset()
+            self.reset_files()
             return read_result
         else:
             txt_data = read_result["txt_data"]
@@ -233,24 +257,28 @@ class Structure:
         build_result = self._build_dat_files(txt_data)
         if not build_result["success"]:
             build_result["title"] = "Composing error!"
-            for file in self.txt_files:
-                file.reset()
-            for file in self.dat_files:
-                file.reset()
+            self.reset_files()
             return build_result
-
-        for file in self.txt_files:
-            file.reset()
 
         # writing files
         for file in self.dat_files:
             res = file.save()
-            file.reset()
+            if not res:
+                self.reset_files()
+                return {
+                    "success": False,
+                    "error": "Can't save file!<br>{}".format(file.get_full_path()),
+                    "title": file.get_name() + "Writing error!"
+                }
+
+        # encoding client files
+        if to_edf:
+            res = self._encode_client_files()
             if not res["success"]:
-                res["title"] = file.get_name() + "Writing error!"
-                for dat in self.dat_files:
-                    dat.reset()
+                self.reset_files()
                 return res
+
+        self.reset_files()
 
         return {"success": True}
 
@@ -258,14 +286,13 @@ class Structure:
 
     def to_txt(self):
 
-        self.total_steps = self.get_steps_to_txt()
+        self.total_steps = self.get_total_steps()
         self.current_step = 0
 
         # reading DAT files
         read_result = self._read_dat_files()
         if not read_result["success"]:
-            for file in self.dat_files:
-                file.reset()
+            self.reset_files()
             return read_result
         else:
             dat_data = read_result["dat_data"]
@@ -274,17 +301,14 @@ class Structure:
         build_result = self._build_txt_files(dat_data)
         if not build_result["success"]:
             build_result["title"] = "Composing error!"
-            for file in self.txt_files:
-                file.reset()
-            for file in self.dat_files:
-                file.reset()
+            self.reset_files()
             return build_result
 
         # writing files
         for file in self.dat_files:
             res = file.save_meta()
-            file.reset()
             if not res:
+                self.reset_files()
                 return {
                     "success": False,
                     "error": "Can't save meta data in header file!",
@@ -292,14 +316,15 @@ class Structure:
                 }
         for file in self.txt_files:
             res = file.save()
-            file.reset()
             if not res:
+                self.reset_files()
                 return {
                     "success": False,
-                    "error": "Can't save TXT file!<br>{}".format(file.get_path()),
+                    "error": "Can't save file!<br>{}".format(file.get_full_path()),
                     "title": file.get_name() + " writing error!"
                 }
 
+        self.reset_files()
         return {"success": True}
 
         pass
@@ -309,6 +334,15 @@ class Structure:
         self.current_step += 1
         self.callbacks["current_progress"](0)
         self.callbacks["total_progress"](self.current_step / (self.total_steps / 100))
+
+        pass
+
+    def reset_files(self):
+
+        for file in self.txt_files:
+            file.reset()
+        for file in self.dat_files:
+            file.reset()
 
         pass
 
@@ -472,6 +506,43 @@ class Structure:
             if not result["success"]:
                 result["title"] = file.get_name() + " composing error!"
                 return result
+
+        return {"success": True}
+
+        pass
+
+    def _encode_client_files(self):
+
+        for file in self.dat_files:
+
+            if file.get_side() != "client":
+                continue
+
+            status_text = "Encoding file: {}".format(file.get_name())
+            self.callbacks["current_progress_text"](status_text)
+
+            encoded = file.encode()
+            file.reset()
+
+            if not encoded:
+                return {
+                    "success": False,
+                    "error": "Can't encode file!<br>{}".format(file.get_full_path()),
+                    "title": file.get_name() + "Writing error!"
+                }
+
+            edf_name = file.get_name().replace(".dat", ".edf")
+            edf_path = ROOT_PATH + "/" + self.paths["cli_edf"] + "/" + edf_name
+            edf_instance = EDFFile(edf_name, edf_path, self.paths)
+
+            if not edf_instance.write(encoded):
+                return {
+                    "success": False,
+                    "error": "Can't save encoded file!<br>{}".format(edf_instance.get_full_path()),
+                    "title": edf_instance.get_name() + "Writing error!"
+                }
+
+            self.step_completed()
 
         return {"success": True}
 

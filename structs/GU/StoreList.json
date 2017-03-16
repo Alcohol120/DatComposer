@@ -1,10 +1,4 @@
 {
-  "structure_info": {
-    "version": "1.0",
-    "author": "Alcohol120%",
-    "description": ""
-  },
-  "working_path": "StoreList",
   "dat_structures": {
     "SRV_StoreList_DAT": [
       {"title": "m_dwIndex", "type": "u32", "value": "{count}"},

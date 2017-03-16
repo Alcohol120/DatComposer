@@ -1,6 +1,5 @@
 from application.config import *
 from application.interface.UI import UI
-from PyQt5 import QtCore
 from PyQt5 import QtGui
 from PyQt5.QtWidgets import *
 
@@ -114,6 +113,12 @@ class Workspace(UI):
 
         self.controls["to_txt"].setEnabled(0)
         UI.menu_bar_items["File"]["Convert to TXT"].setEnabled(0)
+
+        pass
+
+    def to_edf_checked(self):
+
+        return self.controls["to_edf"].isChecked()
 
         pass
 
