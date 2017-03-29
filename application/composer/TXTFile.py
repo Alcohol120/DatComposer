@@ -15,6 +15,7 @@ class TXTFile(File):
         self.output = ""
 
         self.structure = structure
+        self.group_aliases = self._get_groups_aliases()
 
         self.dat_fields_map = {}
 
@@ -64,6 +65,8 @@ class TXTFile(File):
 
         total_rows = len(rows)
         percent = math.floor(total_rows / 100)
+        if percent < 1:
+            percent = 1
         count = 0
         for row in rows:
             if self.canceled:
@@ -103,6 +106,8 @@ class TXTFile(File):
 
         # progress
         percent = math.floor(total_rows / 100)
+        if percent < 1:
+            percent = 1
 
         rows = []
 
@@ -123,9 +128,12 @@ class TXTFile(File):
                         "success": False,
                         "error": "Operation canceled by user!"
                     }
-                group = self.dat_fields_map[field["from"]]
+                group_name = field["from"]
+                if group_name not in self.dat_fields_map:
+                    group_name = self.group_aliases[group_name]
+                group = self.dat_fields_map[group_name]
                 field_index = group["titles"].index(field["field"])
-                cells.append(str(dat_data[field["from"]][count][field_index]))
+                cells.append(str(dat_data[group_name][count][field_index]))
             rows.append("\t".join(cells))
 
             count += 1
@@ -150,15 +158,34 @@ class TXTFile(File):
 
     # Private Methods
 
+    def _get_groups_aliases(self):
+
+        if "groups" not in self.structure or type(self.structure["groups"]) is not str:
+            return {}
+
+        aliases = {}
+        groups = self.structure["groups"].split("|")
+        for group in groups:
+            names = group.split(":")
+            if len(names) > 1:
+                aliases[names[1]] = names[0]
+
+        return aliases
+
+        pass
+
     def _build_header(self) -> list:
 
         row1 = []
         row2 = []
         row3 = []
         for field in self.structure["structure"]["fields"]:
+            group_name = field["from"]
+            if field["from"] not in self.dat_fields_map:
+                group_name = self.group_aliases[field["from"]]
             row1.append(field["title"])
-            row2.append(field["from"])
-            row3.append(self.dat_fields_map[field["from"]]["types"][field["field"]])
+            row2.append(group_name)
+            row3.append(self.dat_fields_map[group_name]["types"][field["field"]])
 
         return [row1, row2, row3]
 
@@ -169,14 +196,15 @@ class TXTFile(File):
 
         total_rows = -1
         for group in groups:
-            if group not in dat_data:
+            group = group.split(":")
+            if group[0] not in dat_data:
                 return {
                     "success": False,
-                    "error": "Insufficient data! Group '{}' is missing!".format(group)
+                    "error": "Insufficient data! Group '{}' is missing!".format(group[0])
                 }
             if total_rows == -1:
-                total_rows = len(dat_data[group])
-            elif len(dat_data[group]) != total_rows:
+                total_rows = len(dat_data[group[0]])
+            elif len(dat_data[group[0]]) != total_rows:
                 return {
                     "success": False,
                     "error": "Error composing TXT file! Groups with different rows count given!"

@@ -63,7 +63,7 @@
       {
         "repeat": 5,
         "fields": [
-          { "title": "{loop}. Item Type", "type": "i32", "use": "{loop}. m_itmPdMat", "rule": "item_code" },
+          { "title": "{loop}. Item Type", "type": "i32", "use": "{loop}. m_itmPdMat", "rule": "item_type" },
           { "title": "{loop}. LinkedIndex", "type": "i32" },
           { "title": "{loop}. Item ID", "type": "x32", "use": "{loop}. m_itmPdMat", "rule": "item_id" },
           { "title": "{loop}. Amount", "type": "i32", "use": "{loop}. m_nDur" },
@@ -78,7 +78,7 @@
       {
         "repeat": 100,
         "fields": [
-          { "title": "{loop}. Item Type", "type": "i32", "use": "{loop}. m_strLinkItemIn", "rule": "item_code" },
+          { "title": "{loop}. Item Type", "type": "i32", "use": "{loop}. m_strLinkItemIn", "rule": "item_type" },
           { "title": "{loop}. ?", "type": "i32" },
           { "title": "{loop}. Item ID", "type": "x32", "use": "{loop}. m_strLinkItemIn", "rule": "item_id" }
         ]

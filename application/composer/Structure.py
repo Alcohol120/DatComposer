@@ -393,7 +393,7 @@ class Structure:
         # replace structure
         if file_data["structure"] in self.structure["txt_structures"]:
             struct = self.structure["txt_structures"][file_data["structure"]]
-            file_data["structure"] = self._get_structure_fields_map(struct)
+            file_data["structure"] = self._get_structure_fields_map(struct, file_data["groups"])
         else:
             file_data["structure"] = False
 
@@ -469,6 +469,7 @@ class Structure:
             fields_map = {}
             for group in needle_groups:
                 # dat fields map
+                group = group.split(":")[0]
                 struct = self._get_dat_group_structure(group)
                 fields_map[group] = self._get_structure_fields_map(struct)
 
@@ -489,6 +490,7 @@ class Structure:
         for file in self.txt_files:
             groups = file.get_needle_groups()
             for group in groups:
+                group = group.split(":")[0]
                 groups_map[group] = {
                     "file": file.get_name(),
                     "map": file.get_fields_map()
@@ -848,12 +850,26 @@ class Structure:
             error += "In: txt_files"
             raise ValueError(error)
 
-        if "groups" not in file or type(file["output_file"]) is not str or file["groups"] == "":
+        if "groups" not in file or type(file["groups"]) is not str or file["groups"] == "":
             error = "'groups' attr is required and must contain a string value!<br>"
             error += "In: txt_files"
             raise ValueError(error)
+        groups = file["groups"].split("|")
+        aliases = []
+        for group in groups:
+            group_names = group.split(":")
+            if len(group_names) > 1:
+                if group_names[1] == "":
+                    error = "'groups' attr contain a wrong alias name: '{}'!<br>".format(group)
+                    error += "In: txt_files->groups"
+                    raise ValueError(error)
+                if group_names[1] in aliases:
+                    error = "Duplicate alias names: '{}'!<br>".format(group_names[1])
+                    error += "In: txt_files->groups"
+                    raise ValueError(error)
+                aliases.append(group_names[1])
 
-        if "structure" not in file or type(file["output_file"]) is not str or file["structure"] == "":
+        if "structure" not in file or type(file["structure"]) is not str or file["structure"] == "":
             error = "'structure' attr is required and must contain a string value!<br>"
             error += "In: txt_files"
             raise ValueError(error)
@@ -989,15 +1005,16 @@ class Structure:
         used_groups = []
         for txt_file in self.structure["txt_files"]:
             for used in txt_file["groups"].split("|"):
-                if used not in groups:
-                    error = "'groups' attr refers to a non-existing group: '{}'!<br>".format(used)
+                group = used.split(":")
+                if group[0] not in groups:
+                    error = "'groups' attr refers to a non-existing group: '{}'!<br>".format(group[0])
                     error += "In: txt_files->groups"
                     raise ValueError(error)
-                if used in used_groups:
-                    error = "Group '{}' should be used only one time!<br>".format(used)
+                if group[0] in used_groups:
+                    error = "Group '{}' should be used only one time!<br>".format(group[0])
                     error += "In: txt_files->groups"
                     raise ValueError(error)
-                used_groups.append(used)
+                used_groups.append(group[0])
 
         if len(used_groups) < len(groups):
             # some groups is never used
@@ -1026,14 +1043,28 @@ class Structure:
 
         # check txt linking
         for file in self.structure["txt_files"]:
-            groups = file["groups"].split("|")
+            used_groups = file["groups"].split("|")
+            groups = {
+                "names": [],
+                "aliases": []
+            }
+            aliases = {}
+            for group in used_groups:
+                group = group.split(":")
+                groups["names"].append(group[0])
+                if len(group) > 1:
+                    groups["aliases"].append(group[1])
+                    aliases[group[1]] = group[0]
             for field in txt_map[file["structure"]]["fields"]:
-                if field["from"] not in groups:
+                if field["from"] not in groups["names"] and field["from"] not in groups["aliases"]:
                     error = "Field refers to a non-existing group: '{}'!<br>".format(field["from"])
                     error += "In: txt_structures->{}".format(field["title"])
                     raise ValueError(error)
 
-                used_structure = groups_map[field["from"]]["dat_structure"]
+                used_group_name = field["from"]
+                if field["from"] not in groups["names"]:
+                    used_group_name = aliases[field["from"]]
+                used_structure = groups_map[used_group_name]["dat_structure"]
                 if field["field"] not in dat_map[used_structure]["titles"]:
                     error = "'field' attr refers to a non-existing dat-field: '{}'!<br>".format(field["field"])
                     error += "In: txt_structures->{}->{}".format(file["structure"], field["title"])
@@ -1063,7 +1094,17 @@ class Structure:
         pass
 
     @staticmethod
-    def _get_structure_fields_map(structure):
+    def _get_structure_fields_map(structure, groups=""):
+
+        group_aliases = {}
+        if groups != "":
+            merged_groups = groups.split("|")
+            for group in merged_groups:
+                group = group.split(":")
+                if len(group) > 1:
+                    group_aliases[group[1]] = group[0]
+                else:
+                    group_aliases[group[0]] = group[0]
 
         data = {
             "titles": [],
@@ -1090,14 +1131,20 @@ class Structure:
                         if "type" in row:
                             data["types"][row["title"]] = row["type"]
                         if "from" in row:
-                            data["from"].append(row["from"] + " -> " + row["field"])
+                            from_name = row["from"]
+                            if row["from"] in group_aliases:
+                                from_name = group_aliases[row["from"]]
+                            data["from"].append(from_name + " -> " + row["field"])
             else:
                 data["fields"].append(field)
                 data["titles"].append(field["title"])
                 if "type" in field:
                     data["types"][field["title"]] = field["type"]
                 if "from" in field:
-                    data["from"].append(field["from"] + " -> " + field["field"])
+                    from_name = field["from"]
+                    if field["from"] in group_aliases:
+                        from_name = group_aliases[field["from"]]
+                    data["from"].append(from_name + " -> " + field["field"])
 
         return data
 
@@ -1112,11 +1159,13 @@ class Structure:
                     "dat_file_index": index,
                     "dat_structure": group["structure"]
                 }
+
         for index, file in enumerate(self.structure["txt_files"]):
             used = file["groups"].split("|")
             for group in used:
-                groups_map[group]["txt_file_index"] = index
-                groups_map[group]["txt_structure"] = file["structure"]
+                group = group.split(":")
+                groups_map[group[0]]["txt_file_index"] = index
+                groups_map[group[0]]["txt_structure"] = file["structure"]
 
         return groups_map
 

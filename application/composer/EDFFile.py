@@ -69,6 +69,8 @@ class EDFFile(File):
         decrypt_data = self._bytes_range(decrypt_data)
 
         percent = math.floor(block_size / 100)
+        if percent < 1:
+            percent = 1
 
         i = 0
         while i < block_size:

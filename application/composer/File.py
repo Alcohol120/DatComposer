@@ -197,11 +197,14 @@ class File:
             elif d_type == "double":
                 return unpack("d", src)[0]
             elif d_type == "cstr":
-                src = src.decode("windows-1251")
+                src = src.decode("windows-1251", "ignore")
                 src = src.strip("\x00")
                 return src
         except Exception as e:
-            return e
+            return {
+                "res": False,
+                "msg": str(e)
+            }
 
         pass
 
@@ -210,17 +213,20 @@ class File:
 
         try:
             if d_type == "u8":
-                return pack("B", int(src))
+                return pack("B", int(float(src)))
             elif d_type == "u16":
-                return pack("H", int(src))
+                return pack("H", int(float(src)))
             elif d_type == "u32":
-                return pack("I", int(src))
+                return pack("I", int(float(src)))
             elif d_type == "i8":
-                return pack("b", int(src))
+                src = int(float(src))
+                if src == 255:
+                    src = 0
+                return pack("b", src)
             elif d_type == "i16":
-                return pack("h", int(src))
+                return pack("h", int(float(src)))
             elif d_type == "i32":
-                return pack("i", int(src))
+                return pack("i", int(float(src)))
             elif d_type == "x8":
                 return pack("B", int(src, 16))
             elif d_type == "x16":
@@ -236,10 +242,13 @@ class File:
             elif d_type == "cstr":
                 if len(src) < length:
                     src += "\x00" * (length - len(src))
-                src = src.encode("windows-1251")
+                src = src.encode("windows-1251", "ignore")
                 return src
         except Exception as e:
-            return e
+            return {
+                "res": False,
+                "msg": str(e)
+            }
 
         pass
 

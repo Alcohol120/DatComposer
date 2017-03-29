@@ -51,7 +51,7 @@ class DATFile(File):
 
             try:
                 result = self._parse_group(group, offset)
-            except ValueError as error:
+            except Exception as error:
                 return {
                     "success": False,
                     "error": str(error)
@@ -85,6 +85,8 @@ class DATFile(File):
             # progress
             total_rows = len(txt_file)
             percent = math.floor(total_rows / 100)
+            if percent < 1:
+                percent = 1
             count = 0
 
             # header
@@ -139,10 +141,10 @@ class DATFile(File):
                     else:
                         result = self._pack_bytes(value, field["type"])
 
-                    if type(result) is ValueError:
+                    if type(result) is dict:
                         return {
                             "success": False,
-                            "error": str(result)
+                            "error": result["msg"]
                         }
                     cells.append(result)
 
@@ -219,6 +221,8 @@ class DATFile(File):
         end = list(bytearray(256))
 
         percent = math.floor(file_size / 100)
+        if percent < 1:
+            percent = 1
 
         # start encoding
         i = 0
@@ -321,6 +325,8 @@ class DATFile(File):
 
         # progress
         percent = math.floor(total_rows / 100)
+        if percent < 1:
+            percent = 1
 
         # read group body
         count = 0
@@ -337,8 +343,10 @@ class DATFile(File):
                 # read field
                 field_data = self.source[offset:(offset + size)]
                 field_data = self._unpack_bytes(field_data, field["type"])
-                if type(field_data) is ValueError:
-                    raise ValueError("{}: Can't read '{}' field!".format(group["group_name"], field["title"]))
+                if type(field_data) is dict:
+                    error = "{}: Can't read '{}' field!".format(group["group_name"], field["title"])
+                    error += "<br>{}".format(field_data["msg"])
+                    raise ValueError(error)
                 cells.append(field_data)
                 offset += size
             rows.append(cells)
@@ -366,8 +374,9 @@ class DATFile(File):
             # read field
             field_data = self.source[offset:(offset + size)]
             field_data = self._unpack_bytes(field_data, field["type"])
-            if type(field_data) is ValueError:
+            if type(field_data) is dict:
                 error = "{}: Can't read '{}' header field!".format(group["group_name"], field["title"])
+                error += "<br>{}".format(field_data["msg"])
                 raise ValueError(error)
             meta_vars[field["title"]] = field_data
             offset += size
@@ -399,6 +408,8 @@ class DATFile(File):
                         result = self._pack_bytes(self.meta[field["title"]], "cstr", 64)
                 else:
                     result = self._pack_bytes(self.meta[field["title"]], field["type"])
+                if type(result) is dict:
+                    raise ValueError(result["msg"])
                 header.append(result)
 
         return {
@@ -413,6 +424,8 @@ class DATFile(File):
 
         total_rows = -1
         if type(group["count"]) is str:
+            if re.search("^[0-9]+$", group["count"].strip()) is not None:
+                return int(group["count"])
             founded_vars = re.findall("\{(.*?)\}", group["count"])
             for var in founded_vars:
                 total_rows = group["count"].replace("{" + var + "}", str(meta_vars[var]))
@@ -420,7 +433,7 @@ class DATFile(File):
                 return -1
             total_rows = int(eval(total_rows))
         else:
-            total_rows = int(group["count"])
+            total_rows = group["count"]
 
         return total_rows
 

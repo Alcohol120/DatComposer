@@ -1,0 +1,24 @@
+{
+  "dat_structures": {
+    "struct": [
+      { "title": "--1", "type": "i32" },
+      { "title": "upper", "type": "i32" },
+      { "title": "lower", "type": "i32" },
+      { "title": "gloves", "type": "i32" },
+      { "title": "shoes", "type": "i32" },
+      { "title": "head", "type": "i32" },
+      { "title": "weapon", "type": "i32" },
+      { "title": "shield", "type": "i32" },
+      { "title": "--2", "type": "i32" },
+      { "title": "--3", "type": "i32" },
+      { "title": "--4", "type": "i32" },
+      { "title": "bullet", "type": "i32" },
+      {
+        "repeat": 34,
+        "fields": [
+          { "title": "{loop}. Unk", "type": "i32" }
+        ]
+      }
+    ]
+  }
+}

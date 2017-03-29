@@ -1,0 +1,43 @@
+{
+  "dat_structures": {
+    "struct": [
+      { "title": "nCount", "type": "i32", "value": "{count}" },
+      { "title": "ID", "type": "x32", "use": "m_strCode", "rule": "item_id" },
+      { "title": "ItemName", "type": "cstr", "len": 64, "value": "" },
+      { "title": "Model", "type": "x32", "use": "m_strModel" },
+      { "title": "Icon", "type": "i32", "use": "m_nIconIDX" },
+      { "title": "BM", "type": "i8", "use": "m_strCivil", "rule": "race_bm" },
+      { "title": "BF", "type": "i8", "use": "m_strCivil", "rule": "race_bf" },
+      { "title": "CM", "type": "i8", "use": "m_strCivil", "rule": "race_cm" },
+      { "title": "CF", "type": "i8", "use": "m_strCivil", "rule": "race_cf" },
+      { "title": "A", "type": "i8", "use": "m_strCivil", "rule": "race_a" },
+      { "title": "blank_byte", "type": "i8", "value": "0" },
+      { "title": "Type", "type": "i8", "value": "12" },
+      { "title": "Money", "type": "i8", "use": "m_nMoney" },
+      { "title": "--1", "type": "i16", "value": "0" },
+      { "title": "Price", "type": "i32", "use": "m_nStdPrice" },
+      { "title": "PvPPrice", "type": "i32", "use": "m_nPVPPoint" },
+      { "title": "GoldPoint", "type": "i32", "use": "m_nGoldPoint" },
+      { "title": "ProcessPoint", "type": "i32", "use": "m_nProcPoint" },
+      { "title": "KillPoint", "type": "i32", "use": "m_nKillPoint" },
+      { "title": "StorePrice", "type": "i32", "use": "m_nStoragePrice" },
+      { "title": "Exchange", "type": "i32", "use": "m_bExchange" },
+      { "title": "Sell", "type": "i32", "use": "m_bSell" },
+      { "title": "Ground", "type": "i32", "use": "m_bGround" },
+      { "title": "Store", "type": "i32", "use": "m_bStoragePossible" },
+      { "title": "Description", "type": "i32", "value": "{count}" },
+      { "title": "IsExist", "type": "i32", "use": "m_bExist" },
+      { "title": "IsCash", "type": "i32", "use": "m_bIsCash" },
+      { "title": "IsTime", "type": "i32", "use": "m_bIsTime" },
+      { "title": "UpLvLim", "type": "i32", "value": "0" },
+      { "title": "1", "type": "i32", "value": "0" }
+    ],
+    "CLI_NDQuestDungeon": [
+      { "title": "nCount", "type": "u32", "value": "{count}" },
+      { "title": "NDnCount", "type": "u32" },
+      { "title": "hidden_field", "type": "cstr", "len": 60, "value": "" },
+      { "title": "Len", "type": "u32", "use": "Text", "rule": "length" },
+      { "title": "Text", "type": "cstr" }
+    ]
+  }
+}

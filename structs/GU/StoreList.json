@@ -47,11 +47,11 @@
     ],
     "CLI_Store_DAT": [
       {"title": "Index", "type": "u32", "value": "{count}"},
-      {"title": "ID", "type": "x32"},
+      {"title": "ID", "type": "x32", "use": "m_strStore_NPCcode", "rule": "npc_id"},
       {"title": "Race", "type": "u8"},
       {"title": "NPCTitle", "type": "cstr", "len": 32, "value": ""},
       {"title": "NPCName", "type": "cstr", "len": 32, "value": ""},
-      {"title": "Texture", "type": "cstr", "len": 32, "use": "m_strStore_NPCcode"},
+      {"title": "Texture", "type": "cstr", "len": 32},
       {"title": "ShopType", "type": "u8", "use": "m_nStore_trade"},
       {"title": "?", "type": "u16", "value": "0"},
       {"title": "NPCstoreAngle", "type": "float", "use": "m_nStore_NPCangle"},
@@ -61,7 +61,7 @@
       {
         "repeat": 200,
         "fields": [
-          {"title": "{loop}. ItemType", "type": "u32", "use": "{loop}. m_strItemlist", "rule": "item_code"},
+          {"title": "{loop}. ItemType", "type": "u32", "use": "{loop}. m_strItemlist", "rule": "item_type"},
           {"title": "{loop}. ItemID", "type": "x32", "use": "{loop}. m_strItemlist", "rule": "item_id"}
         ]
       },
@@ -79,7 +79,7 @@
       {
         "repeat": 16,
         "fields": [
-          {"title": "{loop}. ItemType2", "type": "u32", "use": "{loop}. m_strItemCode", "rule": "item_code"},
+          {"title": "{loop}. ItemType2", "type": "u32", "use": "{loop}. m_strItemCode", "rule": "item_type"},
           {"title": "{loop}. ItemID2", "type": "x32", "use": "{loop}. m_strItemCode", "rule": "item_id"},
           {"title": "{loop}. ItemsCnt", "type": "u32", "use": "{loop}. m_nMaxCount"}
         ]
@@ -98,7 +98,7 @@
       { "title": "m_strCode", "from": "StoreList", "field": "m_strCode" },
       { "title": "m_strBinding_DummyName", "from": "StoreList", "field": "m_strBinding_DummyName" },
       { "title": "m_strStore_NPCcode", "from": "StoreList", "field": "m_strStore_NPCcode" },
-      { "title": "ClientID", "from": "Store", "field": "ID" },
+      { "title": "Texture", "from": "Store", "field": "Texture" },
       { "title": "ShopName", "from": "NDStore", "field": "ShopName" },
       { "title": "NPCName", "from": "NDStore", "field": "NPCName" },
       { "title": "NPCDescription", "from": "NDStore", "field": "Description" },
